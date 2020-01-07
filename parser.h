@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "stack.h"
 
 
 enum token_type {
@@ -24,10 +25,12 @@ struct token {
 	int len;
 };
 
+void print_token(struct token const * const tok);
+
+void copy_token(struct token const * const src, struct token * const dst);
+
 
 struct token *lexer(char const *string);
-
-void print_token(struct token const * const tok);
 
 void test_lexer();
 

@@ -1,8 +1,39 @@
 #include "parser.h"
 
 
+void print_token(struct token const * const tok) {
+	switch (tok->type) {
 
-void next_token(char const * const string, struct token * const tok) {
+		case INT_NUM:
+			printf("integer[%d] %.*s\n", tok->len, tok->len, tok->str);
+			break;
+		case PLUS:
+		case MULT:
+			printf("operator %.*s\n", tok->len, tok->str);
+			break;
+		case LP:
+		case RP:
+			printf("parenthesis %.*s\n", tok->len, tok->str);
+			break;
+		case END_TOKEN:
+			printf("NO token left\n");
+			break;
+		case ERROR:
+			printf("error Unkown token: '%.*s'\n", tok->len, tok->str);
+			break;
+		default:
+			printf("ERROR, can't print token\n");
+			break;
+	}
+}
+
+
+void copy_token(struct token const * const src, struct token * const dst) {
+	*dst = *src;
+}
+
+
+static void next_token(char const * const string, struct token * const tok) {
 
 	int i = 0;
 
@@ -54,34 +85,7 @@ void next_token(char const * const string, struct token * const tok) {
 }
 
 
-void print_token(struct token const * const tok) {
-	switch (tok->type) {
-
-		case INT_NUM:
-			printf("integer[%d] %.*s\n", tok->len, tok->len, tok->str);
-			break;
-		case PLUS:
-		case MULT:
-			printf("operator %.*s\n", tok->len, tok->str);
-			break;
-		case LP:
-		case RP:
-			printf("parenthesis %.*s\n", tok->len, tok->str);
-			break;
-		case END_TOKEN:
-			printf("NO token left\n");
-			break;
-		case ERROR:
-			printf("error Unkown token: '%.*s'\n", tok->len, tok->str);
-			break;
-		default:
-			printf("ERROR, can't print token\n");
-			break;
-	}
-}
-
-
-int count_token(char const *string) {
+static int count_token(char const *string) {
 
 	int count = 0;
 	struct token tok;
@@ -99,7 +103,7 @@ int count_token(char const *string) {
 struct token *lexer(char const *string) {
 
 	int count = count_token(string);
-	struct token *array = malloc(sizeof(struct token) * count);
+	struct token * array = malloc(sizeof(struct token) * count);
 	CHECK_MALLOC(array, "NULL malloc in lexer\n");
 	struct token tmp;
 
@@ -112,6 +116,10 @@ struct token *lexer(char const *string) {
 	assert((array[count - 1].type == END_TOKEN) || (array[count - 1].type == ERROR));
 	return array;
 }
+
+
+
+
 
 
 /*

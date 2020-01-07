@@ -17,9 +17,11 @@ main: main.c parser.o stack.o
 	$(CC) $(CFLAGS) -c $<
 
 
-.PHONY: clean
+.PHONY: clean clear
 
 clean:
 	rm -rvf $(EXEC)
 	rm -rvf *.o
-	@clear
+
+clear: clean
+	@ clear

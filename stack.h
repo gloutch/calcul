@@ -7,9 +7,9 @@
 
 
 // create stack
-typedef void (*func_cpy)(void const * const src, void * const dst);
+typedef void (*stack_copy_elem)(void const * const src, void * const dst);
 
-struct stack * const stack_malloc(int elem_size, int max_elem, func_cpy cpy);
+struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem copy);
 
 
 // basic operation
@@ -27,9 +27,9 @@ int stack_size(struct stack const * const s);
 
 
 // print
-typedef void (*func_print)(void const * const elem);
+typedef void (*stack_print_elem)(void const * const elem);
 
-void stack_print(struct stack const * const s, func_print print);
+void stack_print(struct stack const * const s, stack_print_elem print);
 
 
 // free

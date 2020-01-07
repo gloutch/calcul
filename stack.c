@@ -4,13 +4,13 @@
 struct stack {
 	int elem_size;
 	int max_elem;
-	func_cpy copy;
+	stack_copy_elem copy;
 	void * start;
 	void * current; // pointer to the next space to push
 };
 
 
-struct stack * const stack_malloc(int elem_size, int max_elem, func_cpy cpy_elem) {
+struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem copy) {
 
 	// store the stack on the heap {struct stack, [elem_size * max_elem]}
 	struct stack * s = malloc(sizeof(struct stack) + (elem_size * max_elem));
@@ -19,7 +19,7 @@ struct stack * const stack_malloc(int elem_size, int max_elem, func_cpy cpy_elem
 	// init the stack
 	s->elem_size = elem_size;
 	s->max_elem  = max_elem;
-	s->copy      = cpy_elem;
+	s->copy      = copy;
 	s->start     = (void *) &(s[1]); // the memory juste after the struct stack
 	s->current   = s->start;
 
@@ -54,7 +54,7 @@ int stack_size(struct stack const * const s) {
 
 
 // print
-void stack_print(struct stack const * const s, func_print print) {
+void stack_print(struct stack const * const s, stack_print_elem print) {
 	int count = stack_size(s);
 	for (int i = 0; i < count; i++) {
 		print(s->start + (s->elem_size * i));
@@ -71,18 +71,18 @@ void stack_free(struct stack * const s) {
 }
 
 
+
 /*
 	TEST SECTION
 */
 
 
-// cast (void *) to (int *), then copy src to dst unsing '='
-static void cpy_int(void const * const src, void * const dst) {
-	*((int *) dst) = *((int *) src);
+static void copy_int(int const * const src, int * const dst) {
+	*dst = *src;
 }
 
-static void print_int(void const * const elem) {
-	printf("%d ", *((int *) elem));
+static void print_int(int const * const elem) {
+	// printf("%d ", *elem);
 }
 
 void test_stack() {
@@ -90,7 +90,7 @@ void test_stack() {
 	printf("TEST stack: ");
 	int count = 18;
 
-	struct stack * const s = stack_malloc(sizeof(int), count, cpy_int);
+	struct stack * const s = stack_malloc(sizeof(int), count, (stack_copy_elem) copy_int);
 
 	assert(stack_empty(s));
 	assert(stack_size(s) == 0);
@@ -110,9 +110,7 @@ void test_stack() {
 	assert(stack_size(s) == count);
 
 	// print
-	// printf("\nThe stack: ");
-	// stack_print(s, print_int);
-	// printf("\n");
+	stack_print(s, (stack_print_elem) print_int);
 
 	// pop all
 	for (int i = count - 1; 0 <= i; i--) {
