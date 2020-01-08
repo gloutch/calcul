@@ -16,3 +16,4 @@ The result is sent to something that evaluate the expression without error.
 
 - write a `test` target in makefile
 - write a target with cflag `-DNDEBUG` to compile a realease
+- `console` should catch interrupt

@@ -10,7 +10,7 @@ all: $(EXEC)
 run: all
 	@./$(EXEC)
 
-main: main.c parser.o stack.o
+main: main.c parser.o stack.o console.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c %.h

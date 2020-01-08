@@ -20,6 +20,7 @@ Otherwise,
 `type` describes the error
 `RPN_stack` is NULL or it contains one token pointing to the error
 
+Note: then the stack had to be free
 */
 
 enum result_type {

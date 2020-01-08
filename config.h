@@ -9,8 +9,12 @@
 
 
 #define CONSOLE_PROMPT ">>> "
+#define CONSOLE_DEFAULT_SIZE 256
+#define CONSOLE_QUIT_WORD "q"
+#define CONSOLE_INTRO_MSG "Hi!\nJust type '"CONSOLE_QUIT_WORD"' to leave the program\n"
+#define CONSOLE_QUIT_MSG  "Bye!\n"
 
-// my way to manage malloc error
+
 // This macro whould be called right after every malloc
 #define CHECK_MALLOC(ptr, msg) {	\
 	if ((ptr) == NULL) {			\
@@ -18,7 +22,6 @@
 		exit(1);					\
 	}								\
 }
-
 
 
 #endif // CONFIG_H
