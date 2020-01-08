@@ -17,6 +17,10 @@ void stack_push(struct stack * const s, void const * const elem);
 
 void stack_pop(struct stack * const s, void * const dst);
 
+// void * const void stack_peek(struct stack const * const s);
+
+void stack_reverse(struct stack * const s);
+
 
 // about size
 int stack_empty(struct stack const * const s);

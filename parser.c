@@ -1,5 +1,8 @@
 #include "parser.h"
 
+/*
+	LEXER
+*/
 
 void print_token(struct token const * const tok) {
 	switch (tok->type) {
@@ -33,6 +36,7 @@ void copy_token(struct token const * const src, struct token * const dst) {
 }
 
 
+// the only ERROR can be an 'Unknown token'
 static void next_token(char const * const string, struct token * const tok) {
 
 	int i = 0;
@@ -99,7 +103,8 @@ static int count_token(char const *string) {
 	return count;
 }
 
-// retrun a malloced array of token
+
+// retrun a malloced array of token ended by END_TOKEN or ERROR
 struct token *lexer(char const *string) {
 
 	int count = count_token(string);
@@ -119,6 +124,180 @@ struct token *lexer(char const *string) {
 
 
 
+/*
+	CHANGE SYNTAX
+*/
+
+
+// static int op_is_left_asso(struct token const * const tok) {
+// 	return 1; // no right associative operator for now
+// }
+
+
+// static int preced(struct token const * const tok) {
+// 	switch (tok->type) {
+// 		case LP:
+// 		case RP:
+// 			return 1;
+// 		case PLUS:
+// 			return 2;
+// 		case MULT:
+// 			return 3;
+// 		default:
+// 			return 0;
+// 	}
+// }
+
+
+// // change the input token as an ERROR if syntaxe is wrong
+// // The only error can be a mismatched parentheses
+// static struct token * shunting_yard(struct token * const input, struct stack * const operator, struct stack * const output) {
+
+
+// 	switch (input->type) {
+
+// 		case INT_NUM: // number
+// 			stack_push(output, (void *) input);
+// 			return input;
+
+// 		case PLUS: // operator
+// 		case MULT: {
+// 			struct token top;
+// 			stack_pop(operator, (void *) &top);
+
+// 			// sorry for the ugly condition
+// 			while (
+// 				(top.type != LP)
+// 					&&
+// 					((preced(&top) > preced(input)) 
+// 						|| 
+// 					(preced(&top) == preced(input) && op_is_left_asso(&top)))) 
+// 			{
+// 				stack_push(output, &top);
+// 			}
+// 			stack_push(operator, input);
+// 			return input;
+// 		}
+
+// 		case LP: // left parenthesis
+// 			stack_push(operator, (void *) input);
+// 			return input;
+
+// 		case RP: // right parenthesis
+// 			return input;
+
+// 		default:
+// 			assert(0);
+// 			return input;
+// 	}
+// }
+
+
+
+/*
+	CHECK FUNCTION
+
+Return 0 if NO error is detected
+Otherwise, edits the `struct parser_result` with the corresponding error.
+
+*/
+
+
+
+static int check_err_null(struct parser_result * const res, char const * const str) {
+	if (str != NULL) {
+		return 0;
+	}
+	res->RPN_stack = NULL;
+	res->type      = ERR_NULL;
+	return 1;
+}
+
+
+static int check_err_token(struct parser_result * const res, struct token const * const array) {
+	
+	int i = 0;
+	while ((array[i].type != END_TOKEN) && (array[i].type != ERROR)) {
+		i++;
+	}
+	if (array[i].type == END_TOKEN) {
+		return 0;
+	}
+	// array[i].type == ERROR
+
+	struct stack * err = stack_malloc(sizeof(struct token), 1, (stack_copy_elem) copy_token);
+	stack_push(err, &array[i]);
+
+	res->RPN_stack = err;
+	res->type      = ERR_TOKEN;
+	return 1;
+}
+
+
+static int check_err_parent(struct parser_result * const res, struct token const * const array) {
+
+	int i = 0;
+	int counter = 0;
+
+	struct token const * first_lp = NULL;
+	struct token const * last_rp = NULL;
+
+	while (array[i].type != END_TOKEN) {
+
+		if (array[i].type == LP) {
+			counter++;
+			first_lp = ((first_lp == NULL) ? &array[i] : first_lp);
+		}
+		else if (array[i].type == RP) {
+			counter--;
+			last_rp = &array[i];
+		}
+		i++;
+	}
+	if (counter == 0) {
+		return 0;
+	}
+
+	struct stack * err = stack_malloc(sizeof(struct token), 1, (stack_copy_elem) copy_token);
+	stack_push(err, (counter > 0 ? first_lp : last_rp));	
+
+	res->RPN_stack = err;
+	res->type      = ERR_PARENT;
+	return 1;
+}
+
+
+/*
+	PARSER
+*/
+
+
+// use all function above and check result at each step
+struct parser_result parser(char const * string) {
+
+	// init the returned structure
+	struct parser_result res;
+	res.RPN_stack = NULL;
+	res.type      = CORRECT;
+
+	if (check_err_null(&res, string)) {
+		return res;
+	}
+
+	struct token * tok_array = lexer(string);
+	
+	if (check_err_token(&res, tok_array)) {
+		free(tok_array);
+		return res;
+	}
+	if (check_err_parent(&res, tok_array)) {
+		free(tok_array);
+		return res;
+	}
+
+	free(tok_array);
+	return res;
+}
 
 
 
@@ -127,11 +306,7 @@ struct token *lexer(char const *string) {
 */
 
 
-
-void test_lexer() {
-
-	printf("TEST lexer: ");
-
+static void test_lexer() {
 
 	// next_token
 	char *s1 = "12 + ( 12345";
@@ -172,8 +347,7 @@ void test_lexer() {
 
 
 	// lexer
-	struct token *array = lexer("12 + ( 3 * 4 + 18) + (3*4)");
-
+	struct token *array = lexer("12 +  ( 3 * 4 +   18)  + (3*4)");
 	// for (int i = 0; i < 16; i++) {
 	// 	print_token(&array[i]);
 	// }
@@ -195,12 +369,86 @@ void test_lexer() {
 	assert(array[15].type == END_TOKEN);
 
 	free(array);
-
-
-	printf("done\n");
 }
 
 
+static void test_check() {
+
+	struct parser_result res;
+	res.type = CORRECT;
+
+	// check_err_null
+	assert(!check_err_null(&res, ""));
+	assert(res.type == CORRECT);
+	assert(!check_err_null(&res, "nothing"));
+	assert(res.type == CORRECT);
+	assert(check_err_null(&res, NULL));
+	assert(res.type == ERR_NULL);
+
+
+	// check_err_token
+	res.type = CORRECT;
+
+	struct token *arr1 = lexer("18 + 3");
+	assert(!check_err_token(&res, arr1));
+	assert(res.type == CORRECT);
+	free(arr1);
+
+	struct token *arr2 = lexer("18 + A");
+	assert(check_err_token(&res, arr2));
+	assert(res.type == ERR_TOKEN);
+
+	struct token e1;
+	stack_pop(res.RPN_stack, &e1);
+	assert(e1.type == arr2[2].type); // same token, (error token '==' arr2[2])
+	assert(e1.str == arr2[2].str);
+	assert(e1.len == arr2[2].len);
+	free(arr2);
+
+
+	// check_err_parrnt
+	res.type = CORRECT;
+
+	struct token *parent1 = lexer("18 + 3");
+	assert(!check_err_parent(&res, parent1));
+	assert(res.type == CORRECT);
+	free(parent1);
+
+	struct token *parent2 = lexer("18 * (8 * 3  ");
+	assert(check_err_parent(&res, parent2));
+	assert(res.type == ERR_PARENT);
+
+	struct token p2;
+	stack_pop(res.RPN_stack, &p2);
+	assert(p2.type == LP);
+	assert(*(p2.str) == '(');
+	assert(p2.len == 1);
+	free(parent2);
+
+	struct token *parent3 = lexer("18 *  8 * 3 )");
+	assert(check_err_parent(&res, parent2));
+	assert(res.type == ERR_PARENT);
+
+	struct token p3;
+	stack_pop(res.RPN_stack, &p3);
+	assert(p3.type == RP);
+	assert(*(p3.str) == ')');
+	assert(p3.len == 1);
+	free(parent3);
+
+}
+
+
+void test_parser() {
+
+	printf("TEST lexer: ");
+	test_lexer();
+	printf("done\n");
+
+	printf("TEST parser check: ");
+	test_check();
+	printf("done\n");
+}
 
 
 

@@ -29,13 +29,32 @@ struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem c
 
 // basic operation
 void stack_push(struct stack * const s, void const * const elem) {
+	assert(elem != NULL);
 	s->copy(elem, s->current);
 	s->current += s->elem_size;
 }
 
 void stack_pop(struct stack * const s, void * const dst) {
+	assert(dst != NULL);
 	s->current -= s->elem_size;
 	s->copy(s->current, dst);
+}
+
+// yes, that's not a basic operation, 
+// but that's so easy to write and so much efficient that without the struct
+void stack_reverse(struct stack * const s) {
+
+	int count = stack_size(s);
+	char tmp[s->elem_size]; // tmp memory to store one elem using copy
+
+	for (int i = 0; i < (count / 2); i++) {
+
+		void * i1 = s->start + (s->elem_size * i);
+		void * i2 = s->start + (s->elem_size * (count - 1 - i));
+		s->copy(i1, (void *) &tmp);
+		s->copy(i2, i1);
+		s->copy((void *) &tmp, i2);
+	}
 }
 
 
@@ -71,7 +90,6 @@ void stack_free(struct stack * const s) {
 }
 
 
-
 /*
 	TEST SECTION
 */
@@ -82,13 +100,13 @@ static void copy_int(int const * const src, int * const dst) {
 }
 
 static void print_int(int const * const elem) {
-	// printf("%d ", *elem);
+	printf("%d ", *elem);
 }
 
 void test_stack() {
 
 	printf("TEST stack: ");
-	int count = 18;
+	int count = 6;
 
 	struct stack * const s = stack_malloc(sizeof(int), count, (stack_copy_elem) copy_int);
 
@@ -109,17 +127,19 @@ void test_stack() {
 	assert(stack_full(s));
 	assert(stack_size(s) == count);
 
-	// print
-	stack_print(s, (stack_print_elem) print_int);
+	stack_print(s, (stack_print_elem) print_int); // print
+	stack_reverse(s); // reverse
+	stack_print(s, (stack_print_elem) print_int); // print again
 
 	// pop all
-	for (int i = count - 1; 0 <= i; i--) {
+	for (int i = 0; i < count; i++) {
 
+		assert(stack_size(s) == count - i);
 		int tmp;
 		stack_pop(s, &tmp);
-		assert(stack_size(s) == i);
-		assert(!stack_full(s));
 		assert(tmp == i);
+
+		assert(!stack_full(s));
 	}
 
 	stack_free(s);

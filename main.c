@@ -31,15 +31,16 @@ void display_msg(char *str, int cursor) {
 
 void console() {
 
-	char *buffer;
+	size_t linecap = 80;
+	char *line = malloc(linecap);
 
 	while(1) {
 
 		prompt();
-		getline(&buffer, NULL, stdin);
-		// display_msg(buffer, 0);
+		getline(&line, &linecap, stdin);
+		// display_msg(line, 0);
 
-		lexer(buffer);
+		parser(line);
 	}
 }
 
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
 	printf("Hello Word!\n");
 	// console();
 
-	test_lexer();
+	test_parser();
 	test_stack();
 
 	return 0;
