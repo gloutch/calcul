@@ -35,7 +35,6 @@ void copy_token(struct token const * const src, struct token * const dst) {
 	*dst = *src;
 }
 
-
 // the only ERROR can be an 'Unknown token'
 static void next_token(char const * const string, struct token * const tok) {
 
@@ -103,9 +102,8 @@ static int count_token(char const *string) {
 	return count;
 }
 
-
 // retrun a malloced array of token ended by END_TOKEN or ERROR
-struct token *lexer(char const *string) {
+struct token * const lexer(char const *string) {
 
 	int count = count_token(string);
 	struct token * array = malloc(sizeof(struct token) * count);
@@ -122,7 +120,6 @@ struct token *lexer(char const *string) {
 	return array;
 }
 
-
 // return the length on the array returned by `lexer`
 static int token_array_len(struct token const * const array) {
 	int i = 0;
@@ -138,79 +135,125 @@ static int token_array_len(struct token const * const array) {
 */
 
 
-// static int op_is_left_asso(struct token const * const tok) {
-// 	return 1; // no right associative operator for now
-// }
+static int op_left_asso(struct token const * const tok) {
+	return 1; // no right associative operator for now
+}
 
 
-// static int preced(struct token const * const tok) {
-// 	switch (tok->type) {
-// 		case LP:
-// 		case RP:
-// 			return 1;
-// 		case PLUS:
-// 			return 2;
-// 		case MULT:
-// 			return 3;
-// 		default:
-// 			return 0;
-// 	}
-// }
+static int preced(struct token const * const tok) {
+	switch (tok->type) {
+		case LP:
+		case RP:
+			return 1;
+		case PLUS:
+			return 2;
+		case MULT:
+			return 3;
+		default:
+			assert(0);
+			return 0;
+	}
+}
+
+// let's assume the parenthesis are correct
+static void shunting_yard_wye(struct token const * const input, struct stack * const operator, struct stack * const output) {
+
+	switch (input->type) {
+
+		case INT_NUM: // number
+			stack_push(output, (void *) input);
+			return;
+
+		case PLUS: // operator
+		case MULT: {
+
+			while (!stack_empty(operator)) {
+				struct token const * top = stack_peek(operator);
+
+				// ugly condition about the top token on the operator stack
+				if (!(
+					(top->type != LP)
+						&&
+						((preced(top) > preced(input))
+							||
+						((preced(top) == preced(input)) && op_left_asso(top)))
+					))
+				{
+					break;
+				}
+				struct token tmp;
+				stack_pop(operator, &tmp);
+				stack_push(output, &tmp);
+			}
+
+			stack_push(operator, input);
+			return;
+		}
+		case LP:
+			stack_push(operator, (void *) input);
+			return;
+
+		case RP: {
+
+			struct token tmp;
+			stack_pop(operator, &tmp); // the stack can't be empty because there is the LP token
+
+			while (tmp.type != LP) {
+				stack_push(output, &tmp);
+				stack_pop(operator, &tmp); // the LP doesn't pop up, thus the stack isn't empty
+			}
+			assert(tmp.type == LP);
+			return;
+		}
+		default:
+			assert(0);
+			return;
+	}
+}
 
 
-// // change the input token as an ERROR if syntaxe is wrong
-// // The only error can be a mismatched parentheses
-// static struct token * shunting_yard(struct token * const input, struct stack * const operator, struct stack * const output) {
+static struct stack * const shunting_yard(struct token const * const array) {
+
+	int size = token_array_len(array) - 1; // without END_TOKEN
+	// oversize stack
+	struct stack * operator = stack_malloc(sizeof(struct token), size, (stack_copy_elem) copy_token);
+	struct stack * output   = stack_malloc(sizeof(struct token), size, (stack_copy_elem) copy_token);
+
+	for (int i = 0; i < size; i++) {
+		shunting_yard_wye(&array[i], operator, output);
+	}
+
+	struct token tmp;
+	while (!stack_empty(operator)) {
+		stack_pop(operator, &tmp);
+		stack_push(output, &tmp);
+	}
+	assert(stack_empty(operator));
+
+	// clear
+	stack_free(operator);
+	stack_reverse(output);
+	return output;
+}
 
 
-// 	switch (input->type) {
+static void print_token_RPN(struct token const * const tok) {
+	printf(" %.*s ", tok->len, tok->str);
+}
 
-// 		case INT_NUM: // number
-// 			stack_push(output, (void *) input);
-// 			return input;
 
-// 		case PLUS: // operator
-// 		case MULT: {
-// 			struct token top;
-// 			stack_pop(operator, (void *) &top);
-
-// 			// sorry for the ugly condition
-// 			while (
-// 				(top.type != LP)
-// 					&&
-// 					((preced(&top) > preced(input)) 
-// 						|| 
-// 					(preced(&top) == preced(input) && op_is_left_asso(&top)))) 
-// 			{
-// 				stack_push(output, &top);
-// 			}
-// 			stack_push(operator, input);
-// 			return input;
-// 		}
-
-// 		case LP: // left parenthesis
-// 			stack_push(operator, (void *) input);
-// 			return input;
-
-// 		case RP: // right parenthesis
-// 			return input;
-
-// 		default:
-// 			assert(0);
-// 			return input;
-// 	}
-// }
-
+void print_RPN_stack(struct stack const * const RPN) {
+	stack_print(RPN, (stack_print_elem) print_token_RPN);
+}
 
 
 /*
 	CHECK FUNCTION
 
-Return 0 if NO error is detected
-Otherwise, edits the `struct parser_result` with the corresponding error.
+Returns 0 if NO error is detected
+Otherwise, returns 1 and edits the `struct parser_result` with the corresponding error.
 
 */
-
 
 
 static int check_err_null(struct parser_result * const res, char const * const str) {
@@ -305,21 +348,28 @@ struct parser_result parser(char const * string) {
 		return res;
 	}
 
+	// lexer
 	struct token * tok_array = lexer(string);
 	
 	if (check_err_token(&res, tok_array)) {
 		free(tok_array);
 		return res;
 	}
+	// Even if shunting yard check parenthesis
+	// I prefere check before to create useless stacks
 	if (check_err_parent(&res, tok_array)) {
 		free(tok_array);
 		return res;
 	}
 
+	// syntaxe change (NO ERROR)
+	struct stack * RPN_stack = shunting_yard(tok_array);
 	free(tok_array);
+
+	res.RPN_stack = RPN_stack;
+	res.type      = CORRECT;
 	return res;
 }
-
 
 
 /*
@@ -394,6 +444,38 @@ static void test_lexer() {
 	free(array);
 }
 
+static void test_shunting_yard() {
+	
+	// too lazy to test `shunting_yard_wye`
+	// I directly test `shunting_yard`
+
+	char *str = " 34 + 4  ";
+	struct token * arr1 = lexer(str);
+	struct stack * RPN1 = shunting_yard(arr1); // 34 4 +
+	free(arr1);
+
+	assert(stack_size(RPN1) == 3);
+	struct token tmp;
+
+	stack_pop(RPN1, &tmp);
+	assert(tmp.type == INT_NUM);
+	assert(tmp.str == (str + 1));
+	assert(tmp.len == 2);
+
+	stack_pop(RPN1, &tmp);
+	assert(tmp.type == INT_NUM);
+	assert(tmp.str == (str + 6));
+	assert(tmp.len == 1);
+
+	stack_pop(RPN1, &tmp);
+	assert(tmp.type == PLUS);
+	assert(tmp.str == (str + 4));
+	assert(tmp.len == 1);
+
+	stack_free(RPN1);
+
+	// TODO an better example
+}
 
 static void test_check() {
 
@@ -458,9 +540,9 @@ static void test_check() {
 	assert(*(p3.str) == ')');
 	assert(p3.len == 1);
 	free(parent3);
-
 }
 
+// TODO test parser function
 
 void test_parser() {
 
@@ -475,6 +557,10 @@ void test_parser() {
 
 	printf("TEST parser check: ");
 	test_check();
+	printf("done\n");
+
+	printf("TEST shunting yard: ");
+	test_shunting_yard();
 	printf("done\n");
 }
 

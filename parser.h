@@ -28,9 +28,7 @@ enum result_type {
 	CORRECT,		// everything turned great :D
 	ERR_NULL,		// NULL string :(
 	ERR_TOKEN,		// unknown token
-	ERR_PARENT,		// missing parenthesis
-	ERR_OPERAND,	// missing operand
-	ERR_OPERATOR	// missing operator
+	ERR_PARENT		// missing parenthesis
 };
 
 struct parser_result {
@@ -56,6 +54,8 @@ struct token {
 
 
 struct parser_result parser(char const * string);
+
+void print_RPN_stack(struct stack const * const RPN);
 
 void print_token(struct token const * const tok);
 

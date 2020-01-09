@@ -17,7 +17,7 @@ void stack_push(struct stack * const s, void const * const elem);
 
 void stack_pop(struct stack * const s, void * const dst);
 
-// void * const void stack_peek(struct stack const * const s);
+void * const stack_peek(struct stack const * const s);
 
 void stack_reverse(struct stack * const s);
 
@@ -33,7 +33,7 @@ int stack_size(struct stack const * const s);
 // print
 typedef void (*stack_print_elem)(void const * const elem);
 
-void stack_print(struct stack const * const s, stack_print_elem print);
+void stack_print(struct stack const * const s, stack_print_elem print); // top to bottom
 
 
 // free

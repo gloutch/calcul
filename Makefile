@@ -20,31 +20,32 @@ OBJ_EXEC=$(SRC_EXEC:.c=.o)
 OBJ_TEST=$(SRC_TEST:.c=.o)
 
 
+compile:$(EXEC)
 
 run: $(EXEC)
-	@./$(EXEC)
+	./$(EXEC)
 
 $(EXEC): $(OBJ_EXEC)
 	$(CC) $(CFLAGS) $^ -o $@
 
 tst: $(TEST)
-	@./$(TEST)
+	./$(TEST)
 
 $(TEST): $(OBJ_TEST)
 	$(CC) $(CFLAGS) $^ -o $@
-
-
 
 %.o: %.c %.h config.h
 	$(CC) $(CFLAGS) -c $<
 
 
 
-.PHONY: clean clear
+.PHONY: clean clear mrproper
 
 clean:
-	rm -rvf $(EXEC) $(TEST)
 	rm -rvf *.o
 
 clear: clean
 	@ clear
+
+mrproper: clean
+	rm -rvf $(EXEC) $(TEST)

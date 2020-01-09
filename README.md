@@ -20,13 +20,19 @@ The result is sent to something that evaluate the expression without error.
 
 
 
+## Restriction
+
+For now, I reduce the math expression to a sentence with few operators (`+`, `*`), parenthesis and no function.
+
+
+
 ## Compile
 
-The classic `make` command compiles the `main` executable and runs it just after.
+The classic `make` command compiles the `main` executable. To run it, try `make run`
 
 ### Release
 
-To compile and run a release version (without inner `assert`), just type
+To compile a **release version** (without inner `assert`), just type
 
 ```bash
 make RELEASE=yes
@@ -34,7 +40,7 @@ make RELEASE=yes
 
 ### Test
 
-Run `make tst` to compile the `test` executable which runs tests over the whole project, and then run the tests.
+Run `make tst` to compile the `test` executable which runs tests over the whole project
 
 > The make commands are the result of how I work on this project
 
@@ -42,10 +48,16 @@ Run `make tst` to compile the `test` executable which runs tests over the whole 
 
 ## Clean
 
-Clean the whole project (executables included), run
+Clean the whole project using run
 
 ```bash
 make clean
+```
+
+And include executables with the command
+
+```bash
+make mrproper
 ```
 
 
@@ -55,3 +67,4 @@ make clean
 - [x] write a `test` target in makefile
 - [x] write a target with cflag `-DNDEBUG` to compile a realease
 - [ ] `console` should catch interrupt
+- [ ] write more test for `shunting_yard` and the whole `parser`

@@ -42,6 +42,11 @@ void stack_pop(struct stack * const s, void * const dst) {
 	s->copy(s->current, dst);
 }
 
+void * const stack_peek(struct stack const * const s) {
+	assert(!stack_empty(s));
+	return (s->current - s->elem_size);
+}
+
 // yes, that's not a basic operation, 
 // but that's so easy to write and so much efficient that without the struct
 void stack_reverse(struct stack * const s) {
@@ -77,7 +82,7 @@ int stack_size(struct stack const * const s) {
 // print
 void stack_print(struct stack const * const s, stack_print_elem print) {
 	int count = stack_size(s);
-	for (int i = 0; i < count; i++) {
+	for (int i = count - 1; i >= 0; i--) {
 		print(s->start + (s->elem_size * i));
 	}
 }
@@ -128,6 +133,10 @@ void test_stack() {
 		stack_push(s, &i);
 		assert(!stack_empty(s));
 		assert(stack_size(s) == i + 1);
+
+		// peek
+		int *ptr = stack_peek(s);
+		assert(*ptr == i);
 	}
 
 	// stack is full

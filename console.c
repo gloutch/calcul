@@ -72,12 +72,7 @@ static void print_parser_error(char const * input, struct parser_result error) {
 			printf("Mismatch parenthesis '%.*s'\n", error_token.len, error_token.str);
 			break;
 
-		case ERR_OPERAND:
-		case ERR_OPERATOR:
-			printf("ERROR not managed yet\n");
-			break;
-
-		default:
+		case CORRECT:
 			assert(0);
 			break;
 	}
@@ -112,8 +107,10 @@ void console() {
 		}
 
 		// TODO
-		printf("PARSING CORRECT\n");
-		// stack_free(res.RPN_stack);
+		printf("Reverse Polish Notation ");
+		print_RPN_stack(res.RPN_stack);
+		printf("\n");
+		stack_free(res.RPN_stack);
 
 	}
 	print_leave_msg();
