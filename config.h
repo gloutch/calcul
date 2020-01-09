@@ -11,7 +11,7 @@
 #define CONSOLE_PROMPT ">>> "
 #define CONSOLE_DEFAULT_SIZE 256
 #define CONSOLE_QUIT_WORD "q"
-#define CONSOLE_INTRO_MSG "Hi!\nJust type '"CONSOLE_QUIT_WORD"' to leave the program\n"
+#define CONSOLE_INTRO_MSG "\nHi!\nJust type '"CONSOLE_QUIT_WORD"' to leave the program\n"
 #define CONSOLE_QUIT_MSG  "Bye!\n"
 
 
@@ -24,4 +24,15 @@
 }
 
 
+/*	Macro to check that compiler didn't remove `assert`
+
+#ifdef NDEBUG
+printf("COMPILE ERROR: should NOT be compile with '-DNDEBUG'\n\n");
+exit(1);
+#endif
+
+*/
+
+
 #endif // CONFIG_H
+

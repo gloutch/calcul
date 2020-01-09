@@ -105,6 +105,11 @@ static void print_int(int const * const elem) {
 
 void test_stack() {
 
+	#ifdef NDEBUG
+	printf("COMPILE ERROR: should NOT be compile with '-DNDEBUG'\n\n");
+	exit(1);
+	#endif
+
 	printf("TEST stack: ");
 	int count = 6;
 

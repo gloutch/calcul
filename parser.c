@@ -441,6 +441,11 @@ static void test_check() {
 
 void test_parser() {
 
+	#ifdef NDEBUG
+	printf("COMPILE ERROR: should NOT be compile with '-DNDEBUG'\n\n");
+	exit(1);
+	#endif
+
 	printf("TEST lexer: ");
 	test_lexer();
 	printf("done\n");

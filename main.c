@@ -6,9 +6,5 @@
 int main(int argc, char *argv[]) {
 
 	console();
-
-	// test_parser();
-	// test_stack();
-
 	return 0;
 }
