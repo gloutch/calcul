@@ -30,12 +30,14 @@ struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem c
 // basic operation
 void stack_push(struct stack * const s, void const * const elem) {
 	assert(elem != NULL);
+	assert(!stack_full(s));
 	s->copy(elem, s->current);
 	s->current += s->elem_size;
 }
 
 void stack_pop(struct stack * const s, void * const dst) {
 	assert(dst != NULL);
+	assert(!stack_empty(s));
 	s->current -= s->elem_size;
 	s->copy(s->current, dst);
 }

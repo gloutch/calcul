@@ -123,6 +123,15 @@ struct token *lexer(char const *string) {
 }
 
 
+// return the length on the array returned by `lexer`
+static int token_array_len(struct token const * const array) {
+	int i = 0;
+	while ((array[i].type != END_TOKEN) && (array[i].type != ERROR)) {
+		i++;
+	}
+	return i + 1;
+}
+
 
 /*
 	CHANGE SYNTAX
@@ -216,17 +225,15 @@ static int check_err_null(struct parser_result * const res, char const * const s
 
 static int check_err_token(struct parser_result * const res, struct token const * const array) {
 	
-	int i = 0;
-	while ((array[i].type != END_TOKEN) && (array[i].type != ERROR)) {
-		i++;
-	}
-	if (array[i].type == END_TOKEN) {
+	int last = token_array_len(array) - 1;
+
+	if (array[last].type == END_TOKEN) {
 		return 0;
 	}
 	// array[i].type == ERROR
 
 	struct stack * err = stack_malloc(sizeof(struct token), 1, (stack_copy_elem) copy_token);
-	stack_push(err, &array[i]);
+	stack_push(err, &array[last]);
 
 	res->RPN_stack = err;
 	res->type      = ERR_TOKEN;
@@ -236,30 +243,44 @@ static int check_err_token(struct parser_result * const res, struct token const 
 
 static int check_err_parent(struct parser_result * const res, struct token const * const array) {
 
-	int i = 0;
-	int counter = 0;
+	int const len = token_array_len(array);
 
-	struct token const * first_lp = NULL;
-	struct token const * last_rp = NULL;
+	int lp_counter = 0;
+	int rp_counter = 0;
 
-	while (array[i].type != END_TOKEN) {
+	for (int i = 0; i < len; i++) {
 
 		if (array[i].type == LP) {
-			counter++;
-			first_lp = ((first_lp == NULL) ? &array[i] : first_lp);
+			lp_counter++;
 		}
 		else if (array[i].type == RP) {
-			counter--;
-			last_rp = &array[i];
+			rp_counter++;
 		}
-		i++;
 	}
-	if (counter == 0) {
+	if (lp_counter == rp_counter) { // correct parenthesis number
 		return 0;
 	}
 
-	struct stack * err = stack_malloc(sizeof(struct token), 1, (stack_copy_elem) copy_token);
-	stack_push(err, (counter > 0 ? first_lp : last_rp));	
+	// Find the parenthesis that doesn't match
+	int max_parent = (lp_counter < rp_counter ? rp_counter : lp_counter);
+	struct stack * err = stack_malloc(sizeof(struct token), max_parent, (stack_copy_elem) copy_token);
+	struct token tmp;
+
+	for (int i = 0; i < len; i++) {
+
+		if (array[i].type == LP) {
+			stack_push(err, &array[i]);
+		}
+		else if (array[i].type == RP) {
+
+			if (stack_empty(err)) { // there is not LP corresponding to this RP
+				stack_push(err, &array[i]);
+				break;
+			}
+			stack_pop(err, (void *) &tmp);
+		}
+	}
+	assert(!stack_empty(err)); // the top parenthesis token on the stack mismatch
 
 	res->RPN_stack = err;
 	res->type      = ERR_PARENT;
@@ -348,6 +369,8 @@ static void test_lexer() {
 
 	// lexer
 	struct token *array = lexer("12 +  ( 3 * 4 +   18)  + (3*4)");
+
+	assert(token_array_len(array) == 16);
 	// for (int i = 0; i < 16; i++) {
 	// 	print_token(&array[i]);
 	// }
