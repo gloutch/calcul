@@ -29,15 +29,15 @@ static void print_leave_msg() {
 }
 
 
-static void print_cursor(char const * input, char const * cursor) {
-	// print '^' under the charactere pointed by `cursor` in `input`
-	int offset = cursor - input + strlen(CONSOLE_PROMPT);
-	// TODO find a format srting that does the loop
-	for (int i = 0; i < offset; i++) {
-		printf(" ");
-	}
-	printf("^\n");
-}
+// static void print_cursor(char const * input, char const * cursor) {
+// 	// print '^' under the charactere pointed by `cursor` in `input`
+// 	int offset = cursor - input + strlen(CONSOLE_PROMPT);
+// 	// TODO find a format srting that does the loop
+// 	for (int i = 0; i < offset; i++) {
+// 		printf(" ");
+// 	}
+// 	printf("^\n");
+// }
 
 
 /*
@@ -45,38 +45,38 @@ static void print_cursor(char const * input, char const * cursor) {
 */
 
 
-static void print_parser_error(char const * input, struct parser_result error) {
+// static void print_parser_error(char const * input, struct parser_result error) {
 
-	// get the token
-	struct token error_token;
-	if (error.RPN_stack != NULL) {
-		stack_pop(error.RPN_stack, &error_token);
-		stack_free(error.RPN_stack);
-	}
+// 	// get the token
+// 	struct token error_token;
+// 	if (error.RPN_stack != NULL) {
+// 		stack_pop(error.RPN_stack, &error_token);
+// 		stack_free(error.RPN_stack);
+// 	}
 
-	switch (error.type) {
+// 	switch (error.type) {
 
-		case ERR_NULL:
-			printf("NULL string \\_(^.^)_/ \n");
-			break;
+// 		case ERR_NULL:
+// 			printf("NULL string \\_(^.^)_/ \n");
+// 			break;
 
-		case ERR_TOKEN:
-			assert(error_token.type == ERROR);
-			print_cursor(input, error_token.str);
-			printf("Unknown token '%.*s'\n", error_token.len, error_token.str);
-			break;
+// 		case ERR_TOKEN:
+// 			assert(error_token.type == ERROR);
+// 			print_cursor(input, error_token.str);
+// 			printf("Unknown token '%.*s'\n", error_token.len, error_token.str);
+// 			break;
 
-		case ERR_PARENT:
-			assert((error_token.type == LP) || (error_token.type == RP));
-			print_cursor(input, error_token.str);
-			printf("Mismatch parenthesis '%.*s'\n", error_token.len, error_token.str);
-			break;
+// 		case ERR_PARENT:
+// 			assert((error_token.type == LP) || (error_token.type == RP));
+// 			print_cursor(input, error_token.str);
+// 			printf("Mismatch parenthesis '%.*s'\n", error_token.len, error_token.str);
+// 			break;
 
-		case CORRECT:
-			assert(0);
-			break;
-	}
-}
+// 		case CORRECT:
+// 			assert(0);
+// 			break;
+// 	}
+// }
 
 
 
@@ -100,17 +100,21 @@ void console() {
 			break;
 		}
 
-		struct parser_result res = parser(line);
-		if (res.type != CORRECT) {
-			print_parser_error(line, res);
-			continue;
-		}
+		struct lexer_result res = lexer(line);
+		print_lexer_result(&res);
+		free((void *) res.tarray);
+
+		// struct parser_result res = parser(line);
+		// if (res.type != CORRECT) {
+		// 	print_parser_error(line, res);
+		// 	continue;
+		// }
 
 		// TODO
-		printf("Reverse Polish Notation ");
-		print_RPN_stack(res.RPN_stack);
-		printf("\n");
-		stack_free(res.RPN_stack);
+		// printf("Reverse Polish Notation ");
+		// print_RPN_stack(res.RPN_stack);
+		// printf("\n");
+		// stack_free(res.RPN_stack);
 
 	}
 	print_leave_msg();

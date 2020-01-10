@@ -7,37 +7,37 @@
 
 
 // create stack
-typedef void (*stack_copy_elem)(void const * const src, void * const dst);
+typedef void (*stack_copy_elem)(const void * const src, void * const dst);
 
-struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem copy);
+struct stack * stack_malloc(int elem_size, int max_elem, stack_copy_elem copy);
 
 
 // basic operation
-void stack_push(struct stack * const s, void const * const elem);
+void stack_push(struct stack * s, const void * elem);
 
-void stack_pop(struct stack * const s, void * const dst);
+void stack_pop(struct stack * s, void * dst);
 
-void * const stack_peek(struct stack const * const s);
+void * stack_peek(const struct stack * s);
 
-void stack_reverse(struct stack * const s);
+void stack_reverse(struct stack * s);
 
 
 // about size
-int stack_empty(struct stack const * const s);
+int stack_empty(const struct stack * s);
 
-int stack_full(struct stack const * const s);
+int stack_full(const struct stack * s);
 
-int stack_size(struct stack const * const s);
+int stack_size(const struct stack * s);
 
 
 // print
-typedef void (*stack_print_elem)(void const * const elem);
+typedef void (*stack_print_elem)(const void * const elem);
 
-void stack_print(struct stack const * const s, stack_print_elem print); // top to bottom
+void stack_print(const struct stack * s, stack_print_elem print); // top to bottom
 
 
 // free
-void stack_free(struct stack * const s);
+void stack_free(struct stack * s);
 
 
 // test

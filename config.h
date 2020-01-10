@@ -27,8 +27,11 @@
 /*	Macro to check that compiler didn't remove `assert`
 
 #ifdef NDEBUG
-printf("COMPILE ERROR: should NOT be compile with '-DNDEBUG'\n\n");
-exit(1);
+	printf("COMPILE ERROR: test should NOT be compile with '-DNDEBUG'\n\n");
+	exit(1);
+#else
+	printf("test: ");
+	printf("done\n");
 #endif
 
 */

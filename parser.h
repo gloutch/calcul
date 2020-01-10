@@ -24,44 +24,30 @@ Note: then the stack had to be free
 
 */
 
-enum result_type {
-	CORRECT,		// everything turned great :D
-	ERR_NULL,		// NULL string :(
-	ERR_TOKEN,		// unknown token
-	ERR_PARENT		// missing parenthesis
-};
-
-struct parser_result {
-	enum result_type type;
-	struct stack * RPN_stack;
-};
-
-enum token_type {
-	INT_NUM,	// number
-	PLUS,		// operator
-	MULT,
-	LP,			// parenthesis	
-	RP,
-	END_TOKEN,	// specials
-	ERROR
-};
-
-struct token {
-	enum token_type type;
-	char const *str;
-	int len;
-};
 
 
-struct parser_result parser(char const * string);
+// enum result_type {
+// 	CORRECT,		// everything turned great :D
+// 	ERR_NULL,		// NULL string :(
+// 	ERR_TOKEN,		// unknown token
+// 	ERR_PARENT		// missing parenthesis
+// };
 
-void print_RPN_stack(struct stack const * const RPN);
+// struct parser_result {
+// 	enum result_type type;
+// 	struct stack * RPN_stack;
+// };
 
-void print_token(struct token const * const tok);
 
-void copy_token(struct token const * const src, struct token * const dst);
+// struct parser_result parser(char const * string);
 
-void test_parser();
+// void print_RPN_stack(struct stack const * const RPN);
+
+// void print_token(struct token const * const tok);
+
+// void copy_token(struct token const * const src, struct token * const dst);
+
+// void test_parser();
 
 
 #endif // PARSER_H

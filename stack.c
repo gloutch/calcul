@@ -10,7 +10,7 @@ struct stack {
 };
 
 
-struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem copy) {
+struct stack * stack_malloc(int elem_size, int max_elem, stack_copy_elem copy) {
 
 	// store the stack on the heap {struct stack, [elem_size * max_elem]}
 	struct stack * s = malloc(sizeof(struct stack) + (elem_size * max_elem));
@@ -28,28 +28,28 @@ struct stack * const stack_malloc(int elem_size, int max_elem, stack_copy_elem c
 
 
 // basic operation
-void stack_push(struct stack * const s, void const * const elem) {
+void stack_push(struct stack * s, const void * elem) {
 	assert(elem != NULL);
 	assert(!stack_full(s));
 	s->copy(elem, s->current);
 	s->current += s->elem_size;
 }
 
-void stack_pop(struct stack * const s, void * const dst) {
+void stack_pop(struct stack * s, void * dst) {
 	assert(dst != NULL);
 	assert(!stack_empty(s));
 	s->current -= s->elem_size;
 	s->copy(s->current, dst);
 }
 
-void * const stack_peek(struct stack const * const s) {
+void * stack_peek(const struct stack * s) {
 	assert(!stack_empty(s));
 	return (s->current - s->elem_size);
 }
 
 // yes, that's not a basic operation, 
 // but that's so easy to write and so much efficient that without the struct
-void stack_reverse(struct stack * const s) {
+void stack_reverse(struct stack * s) {
 
 	int count = stack_size(s);
 	char tmp[s->elem_size]; // tmp memory to store one elem using copy
@@ -66,21 +66,21 @@ void stack_reverse(struct stack * const s) {
 
 
 // about size
-int stack_empty(struct stack const * const s) {
+int stack_empty(const struct stack * s) {
 	return (s->start == s->current);
 }
 
-int stack_full(struct stack const * const s) {
+int stack_full(const struct stack * s) {
 	return ((s->current - s->start) == (s->elem_size * s->max_elem));
 }
 
-int stack_size(struct stack const * const s) {
+int stack_size(const struct stack * s) {
 	return ((s->current - s->start) / s->elem_size);
 }
 
 
 // print
-void stack_print(struct stack const * const s, stack_print_elem print) {
+void stack_print(const struct stack * s, stack_print_elem print) {
 	int count = stack_size(s);
 	for (int i = count - 1; i >= 0; i--) {
 		print(s->start + (s->elem_size * i));
@@ -89,7 +89,7 @@ void stack_print(struct stack const * const s, stack_print_elem print) {
 
 
 // free
-void stack_free(struct stack * const s) {
+void stack_free(struct stack * s) {
 	s->copy    = NULL;
 	s->start   = NULL;
 	s->current = NULL;
@@ -102,20 +102,20 @@ void stack_free(struct stack * const s) {
 */
 
 
-static void copy_int(int const * const src, int * const dst) {
+static void copy_int(const int * const src, int * const dst) {
 	*dst = *src;
 }
 
-static void print_int(int const * const elem) {
+static void print_int(const int * const elem) {
 	printf("%d ", *elem);
 }
 
 void test_stack() {
 
 	#ifdef NDEBUG
-	printf("COMPILE ERROR: should NOT be compile with '-DNDEBUG'\n\n");
+	printf("COMPILE ERROR: test should NOT be compile with '-DNDEBUG'\n\n");
 	exit(1);
-	#endif
+	#else
 
 	printf("TEST stack: ");
 	int count = 6;
@@ -161,6 +161,7 @@ void test_stack() {
 	stack_free(s);
 
 	printf("done\n");
+	#endif
 }
 
 

@@ -6,5 +6,6 @@
 int main(int argc, char *argv[]) {
 
 	console();
+	
 	return 0;
 }

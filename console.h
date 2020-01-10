@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
-#include "parser.h"
+#include "lexer.h"
+// #include "parser.h"
 
 
 void console();
