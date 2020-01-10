@@ -117,8 +117,8 @@ void test_stack() {
 	exit(1);
 	#else
 
-	printf("TEST stack: ");
-	int count = 6;
+	printf("STACK: \n");
+	int count = 10;
 
 	struct stack * const s = stack_malloc(sizeof(int), count, (stack_copy_elem) copy_int);
 
@@ -145,6 +145,7 @@ void test_stack() {
 
 	stack_print(s, (stack_print_elem) print_int); // print
 	stack_reverse(s); // reverse
+	printf("\n");
 	stack_print(s, (stack_print_elem) print_int); // print again
 
 	// pop all

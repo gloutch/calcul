@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "lexer.h"
-// #include "stack.h"
+#include "stack.h"
 // #include "parser.h"
 
 /*
@@ -20,11 +20,9 @@ int main(int argc, char *argv[]) {
 	printf("\nrun all tests\n\n");
 
 	test_lexer();
-	// printf("parser\n");
 	// test_parser();
-	printf("stack\n");
 	test_stack();
 	#endif
-	
+
 	return 0;
 }

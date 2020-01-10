@@ -19,19 +19,15 @@ enum lexer_token_type {
 	NUMBER,
 	// var
 	VAR,
-	// symbol
-	PLUS,
-	ASTERISK,
-	MINUS,
-	// parenthesis
+	// symbol (operator)
+	SYMBOL,
+	// specials
 	LPAREN,
 	RPAREN,
-	// ,
 	COMMA,
+	END_LEXER,
 	// everthing else
 	UNKNOWN,
-	// end of token
-	END_LEXER
 };
 
 struct lexer_token {

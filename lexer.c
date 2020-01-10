@@ -12,9 +12,7 @@ void print_lexer_token(const struct lexer_token * const tok) {
 		case VAR:
 			printf("VAR     [%d] %.*s \n", tok->len, tok->len, tok->str);
 			break;
-		case PLUS:
-		case ASTERISK:
-		case MINUS:
+		case SYMBOL:
 			printf("SYMBOL  %.*s \n", tok->len, tok->str);
 			break;
 		case LPAREN:
@@ -24,11 +22,11 @@ void print_lexer_token(const struct lexer_token * const tok) {
 		case COMMA:
 			printf("COMMA   %.*s \n", tok->len, tok->str);
 			break;
-		case UNKNOWN:
-			printf("UNKNOWN [%d] %.*s \n", tok->len, tok->len, tok->str);
-			break;
 		case END_LEXER:
 			printf("END \n");
+			break;
+		case UNKNOWN:
+			printf("UNKNOWN [%d] %.*s \n", tok->len, tok->len, tok->str);
 			break;
 		default:
 			assert(0);
@@ -46,18 +44,9 @@ static const char * eat_whitespace(const char * string) {
 }
 
 
-static int check_one_char(const char * str, struct lexer_token * token) {
+static int try_special(const char * str, struct lexer_token * token) {
 
-	switch(str[0]) {
-		case '+':
-			token->type = PLUS;
-			break;
-		case '*':
-			token->type = ASTERISK;
-			break;
-		case '-':
-			token->type = MINUS;
-			break;
+	switch (str[0]) {
 		case '(':
 			token->type = LPAREN;
 			break;
@@ -79,7 +68,25 @@ static int check_one_char(const char * str, struct lexer_token * token) {
 }
 
 
-static int check_variable(const char * str, struct lexer_token * token) {
+static int try_symbole(const char * str, struct lexer_token * token) {
+
+	switch (str[0]) {
+		case '+':
+		case '*':
+		case '-':
+		case '/':
+			token->type = SYMBOL;
+			break;
+		default:
+			return 0;
+	}
+	token->str = str;
+	token->len = 1;
+	return 1;
+}
+
+
+static int try_variable(const char * str, struct lexer_token * token) {
 
 	if (!( isalpha(str[0]) || (str[0] == '_') )) { // begin with alpha or '_'
 		return 0;
@@ -96,7 +103,7 @@ static int check_variable(const char * str, struct lexer_token * token) {
 }
 
 
-static int check_number(const char * str, struct lexer_token * token) {
+static int try_number(const char * str, struct lexer_token * token) {
 
 	if (!isdigit(str[0])) {
 		return 0;
@@ -131,13 +138,16 @@ static void next_token(const char * string, struct lexer_token * token) {
 	const char *str = eat_whitespace(string);
 	assert(str == eat_whitespace(str));
 
-	if (check_one_char(str, token)) {
+	if (try_special(str, token)) {
 		return;
 	}
-	if (check_variable(str, token)) {
+	if (try_symbole(str, token)) {
 		return;
 	}
-	if (check_number(str, token)) {
+	if (try_variable(str, token)) {
+		return;
+	}
+	if (try_number(str, token)) {
 		return;
 	}
 	// Assume the token is unknown
@@ -211,7 +221,7 @@ void test_lexer() {
 	printf("COMPILE ERROR: test should NOT be compile with '-DNDEBUG'\n\n");
 	exit(1);
 	#else
-	printf("TEST lexer: \n");
+	printf("LEXER: \n");
 
 
 	printf(" eat_whitespace\n");
@@ -224,45 +234,45 @@ void test_lexer() {
 	assert(str4 == (str3 + 3));
 
 
-	printf(" check_variable\n");
+	printf(" try_variable\n");
 	struct lexer_token t1;
 
-	assert(check_variable("abc", &t1));
+	assert(try_variable("abc", &t1));
 	assert(t1.type == VAR);
 	assert(t1.len  == 3);
 
-	assert(check_variable("_abc", &t1));
+	assert(try_variable("_abc", &t1));
 	assert(t1.type == VAR);
 	assert(t1.len  == 4);
 
-	assert(check_variable("_Abc2", &t1));
+	assert(try_variable("_Abc2", &t1));
 	assert(t1.type == VAR);
 	assert(t1.len  == 5);
 
-	assert(!check_variable("123", &t1));
-	assert(!check_variable("1bc", &t1));
+	assert(!try_variable("123", &t1));
+	assert(!try_variable("1bc", &t1));
 
 
-	printf(" check_number\n");
+	printf(" try_number\n");
 	struct lexer_token t2;
 
-	assert(check_number("123", &t2));
+	assert(try_number("123", &t2));
 	assert(t2.type == NUMBER);
 	assert(t2.len  == 3);
 
-	assert(check_number("123aa", &t2));
+	assert(try_number("123aa", &t2));
 	assert(t2.type == NUMBER);
 	assert(t2.len  == 3);
 
-	assert(check_number("123.", &t2));
+	assert(try_number("123.", &t2));
 	assert(t2.type == NUMBER);
 	assert(t2.len  == 4);
 
-	assert(check_number("123.45", &t2));
+	assert(try_number("123.45", &t2));
 	assert(t2.type == NUMBER);
 	assert(t2.len  == 6);
 
-	assert(!check_number(".123", &t2));
+	assert(!try_number(".123", &t2));
 
 
 	printf(" next_token\n");
@@ -281,15 +291,15 @@ void test_lexer() {
 	assert(t3.len  == 4);
 
 	next_token(" +", &t3);
-	assert(t3.type == PLUS);
+	assert(t3.type == SYMBOL);
 	assert(t3.len  == 1);
 
 	next_token(" *", &t3);
-	assert(t3.type == ASTERISK);
+	assert(t3.type == SYMBOL);
 	assert(t3.len  == 1);
 
 	next_token("-", &t3);
-	assert(t3.type == MINUS);
+	assert(t3.type == SYMBOL);
 	assert(t3.len  == 1);
 
 	next_token("   (", &t3);
@@ -323,18 +333,18 @@ void test_lexer() {
 
 	assert(res.token_count == 16);
 	assert(res.tarray[0].type  == NUMBER);
-	assert(res.tarray[1].type  == PLUS);
+	assert(res.tarray[1].type  == SYMBOL);
 	assert(res.tarray[2].type  == LPAREN);
 	assert(res.tarray[3].type  == NUMBER);
-	assert(res.tarray[4].type  == ASTERISK);
+	assert(res.tarray[4].type  == SYMBOL);
 	assert(res.tarray[5].type  == NUMBER);
-	assert(res.tarray[6].type  == PLUS);
+	assert(res.tarray[6].type  == SYMBOL);
 	assert(res.tarray[7].type  == NUMBER);
 	assert(res.tarray[8].type  == RPAREN);
-	assert(res.tarray[9].type  == PLUS);
+	assert(res.tarray[9].type  == SYMBOL);
 	assert(res.tarray[10].type == LPAREN);
 	assert(res.tarray[11].type == NUMBER);
-	assert(res.tarray[12].type == ASTERISK);
+	assert(res.tarray[12].type == SYMBOL);
 	assert(res.tarray[13].type == NUMBER);
 	assert(res.tarray[14].type == RPAREN);
 	assert(res.tarray[15].type == END_LEXER);
