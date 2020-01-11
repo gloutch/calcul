@@ -7,7 +7,7 @@
 #include <string.h>
 #include "config.h"
 #include "lexer.h"
-// #include "parser.h"
+#include "parser.h"
 
 
 void console();

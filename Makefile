@@ -6,7 +6,7 @@ ifeq ($(RELEASE),yes)
 	# release = remove assert
 	CFLAGS=-std=c99 -Wall -DNDEBUG
 else
-	CFLAGS=-std=c99 -Wall -Werror
+	CFLAGS=-std=c99 -Wall
 endif
 
 

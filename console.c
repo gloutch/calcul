@@ -100,9 +100,22 @@ void console() {
 			break;
 		}
 
-		struct lexer_result res = lexer(line);
-		print_lexer_result(&res);
-		free((void *) res.tarray);
+		struct lexer_result lex = lexer(line);
+
+		printf("> lexer \n");
+		print_lexer_result(&lex);
+		
+		struct parser_token * token = convert_token(lex);
+
+		printf("> parser\n");
+		for (int i = 0; i < (lex.token_count - 1); i++) {
+			print_parser_token(token[i]);
+		}
+
+		printf("> clean\n");
+		free((void *) token);
+		free_lexer_result(lex);
+		printf("\n");
 
 		// struct parser_result res = parser(line);
 		// if (res.type != CORRECT) {

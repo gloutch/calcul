@@ -10,17 +10,16 @@
 
 
 /*
-	The lexer return a `struct lexer_result` which is an malloced array of token.
-	The lexer stops until it finds a END_LEXER or UNKNOWN token (last elem of the array)
+	The `lexer` returns a `struct lexer_result` which is an malloced array of token.
+
+The lexer stops until it finds an UNKNOWN token or it reachs the end of the string END_LEXER
+Then, the last token of the `tarray` is one of this
 */
 
 enum lexer_token_type {
-	// num
 	NUMBER,
-	// var
-	VAR,
-	// symbol (operator)
-	SYMBOL,
+	NAME,
+	SYMBOL, // (operator)
 	// specials
 	LPAREN,
 	RPAREN,
@@ -32,7 +31,7 @@ enum lexer_token_type {
 
 struct lexer_token {
 	enum lexer_token_type type;
-	const char *str;
+	const char * str;
 	int len;
 };
 
@@ -49,6 +48,7 @@ void print_lexer_token(const struct lexer_token * const tok);
 void print_lexer_result(const struct lexer_result * res);
 
 void free_lexer_result(struct lexer_result res);
+
 
 void test_lexer();
 

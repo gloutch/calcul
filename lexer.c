@@ -9,8 +9,8 @@ void print_lexer_token(const struct lexer_token * const tok) {
 		case NUMBER:
 			printf("NUMBER  [%d] %.*s \n", tok->len, tok->len, tok->str);
 			break;
-		case VAR:
-			printf("VAR     [%d] %.*s \n", tok->len, tok->len, tok->str);
+		case NAME:
+			printf("NAME    [%d] %.*s \n", tok->len, tok->len, tok->str);
 			break;
 		case SYMBOL:
 			printf("SYMBOL  %.*s \n", tok->len, tok->str);
@@ -26,7 +26,7 @@ void print_lexer_token(const struct lexer_token * const tok) {
 			printf("END \n");
 			break;
 		case UNKNOWN:
-			printf("UNKNOWN [%d] %.*s \n", tok->len, tok->len, tok->str);
+			printf("UNKNOWN [%d] %.*s... \n", tok->len, tok->len, tok->str);
 			break;
 		default:
 			assert(0);
@@ -75,6 +75,7 @@ static int try_symbole(const char * str, struct lexer_token * token) {
 		case '*':
 		case '-':
 		case '/':
+		case '=':
 			token->type = SYMBOL;
 			break;
 		default:
@@ -86,7 +87,7 @@ static int try_symbole(const char * str, struct lexer_token * token) {
 }
 
 
-static int try_variable(const char * str, struct lexer_token * token) {
+static int try_name(const char * str, struct lexer_token * token) {
 
 	if (!( isalpha(str[0]) || (str[0] == '_') )) { // begin with alpha or '_'
 		return 0;
@@ -96,7 +97,7 @@ static int try_variable(const char * str, struct lexer_token * token) {
 	while (isalpha(str[i]) || (str[i] == '_') || isdigit(str[i])) { // following by alpha, '_', digit
 		i++;
 	}
-	token->type = VAR;
+	token->type = NAME;
 	token->str  = str;
 	token->len  = i;
 	return 1;
@@ -144,7 +145,7 @@ static void next_token(const char * string, struct lexer_token * token) {
 	if (try_symbole(str, token)) {
 		return;
 	}
-	if (try_variable(str, token)) {
+	if (try_name(str, token)) {
 		return;
 	}
 	if (try_number(str, token)) {
@@ -206,6 +207,7 @@ void print_lexer_result(const struct lexer_result * res) {
 
 
 void free_lexer_result(struct lexer_result res) {
+	res.token_count = 0;
 	free((void *) res.tarray);
 }
 
@@ -234,23 +236,23 @@ void test_lexer() {
 	assert(str4 == (str3 + 3));
 
 
-	printf(" try_variable\n");
+	printf(" try_name\n");
 	struct lexer_token t1;
 
-	assert(try_variable("abc", &t1));
-	assert(t1.type == VAR);
+	assert(try_name("abc", &t1));
+	assert(t1.type == NAME);
 	assert(t1.len  == 3);
 
-	assert(try_variable("_abc", &t1));
-	assert(t1.type == VAR);
+	assert(try_name("_abc", &t1));
+	assert(t1.type == NAME);
 	assert(t1.len  == 4);
 
-	assert(try_variable("_Abc2", &t1));
-	assert(t1.type == VAR);
+	assert(try_name("_Abc2", &t1));
+	assert(t1.type == NAME);
 	assert(t1.len  == 5);
 
-	assert(!try_variable("123", &t1));
-	assert(!try_variable("1bc", &t1));
+	assert(!try_name("123", &t1));
+	assert(!try_name("1bc", &t1));
 
 
 	printf(" try_number\n");
@@ -287,7 +289,7 @@ void test_lexer() {
 	assert(t3.len  == 5);
 
 	next_token(" _Aa1", &t3);
-	assert(t3.type == VAR);
+	assert(t3.type == NAME);
 	assert(t3.len  == 4);
 
 	next_token(" +", &t3);

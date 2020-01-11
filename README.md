@@ -28,6 +28,8 @@ For now, I reduce the math expression to a sentence with few operators (`+`, `*`
 
 ## Compile
 
+> The make commands are the result of how I work on this project
+
 The classic `make` command compiles the `main` executable. To run it, try `make run`
 
 ### Release
@@ -38,13 +40,19 @@ To compile a **release version** (without inner `assert`), just type
 make RELEASE=yes
 ```
 
+> maybe `make mrproper` before
+
 ### Test
 
 Run `make tst` to compile the `test` executable which runs tests over the whole project
 
-> The make commands are the result of how I work on this project
+Otherwise, I typed expression in the console to see if it works as I wanted. For instance, an expression designed to challenge the parser is
 
- 
+```c
+12 + -(13.0 * var_1 - max(-1, 2))
+```
+
+
 
 ## Clean
 

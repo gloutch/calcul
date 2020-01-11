@@ -1,9 +1,118 @@
-// #include "parser.h"
+#include "parser.h"
+
+#define TOKEN_STACK(size) stack_malloc(sizeof(struct token), (size), (stack_copy_elem) copy_token)
 
 
-// /*
-// 	CHANGE SYNTAX
-// */
+/*
+	INTERFACE LEXER / PARSER
+*/
+
+
+static int is_binary_op(int i, const struct lexer_result lex) {
+	assert(lex.tarray[i].type == SYMBOL);
+
+	if (i == 0) { // first token
+		return 0;
+	}
+	enum lexer_token_type previous = lex.tarray[i - 1].type;
+	return ((previous == NUMBER) || (previous == NAME)); // juste before is an operand
+}
+
+
+static enum parser_token_type lexer_token_to_parser_token(int i, const struct lexer_result lex) {
+
+	struct lexer_token token = lex.tarray[i];
+	switch (token.type) {
+
+		case NUMBER:
+			return NUM_OPERAND;
+		case NAME:
+			if ((i + 1 < lex.token_count) && (lex.tarray[i + 1].type == LPAREN)) { // if just NAME there is a '('
+				return FUNC_NAME;
+			}
+			return VAR_OPERAND;
+
+		case SYMBOL: {
+			if (strncmp(token.str, "+", token.len) == 0) {
+				return (is_binary_op(i, lex) ? PLUS : UNARY_PLUS);
+			}
+			if (strncmp(token.str, "-", token.len) == 0) {
+				return (is_binary_op(i, lex) ? MINUS : UNARY_MINUS);
+			}
+			if (strncmp(token.str, "*", token.len) == 0) {
+				return ASTERISK;
+			}
+			return ERROR;
+		}
+		case LPAREN:
+			return LPARENT;
+		case RPAREN:
+			return RPARENT;
+		case COMMA:
+			return ARG_SEP;
+		default:
+			return ERROR;
+	}
+}
+
+
+// TODO check error token
+struct parser_token * convert_token(const struct lexer_result lex) {
+
+	struct parser_token * token_array = malloc(sizeof(struct parser_token) * (lex.token_count - 1));
+	struct parser_token token;
+
+	for (int i = 0; i < (lex.token_count - 1); i++) { // without END_LEXER
+
+		token.type = lexer_token_to_parser_token(i, lex);
+		token.str  = lex.tarray[i].str;
+		token.len  = lex.tarray[i].len;
+		token_array[i] = token;
+	}
+	return token_array;
+}
+
+
+/*
+	CHANGE SYNTAX
+*/
+
+
+void print_parser_token(const struct parser_token token) {
+
+	switch (token.type) {
+
+		case NUM_OPERAND:
+		case VAR_OPERAND:
+			printf("OPERAND    [%d] %.*s \n", token.len, token.len, token.str);
+			break;
+		case FUNC_NAME:
+			printf("FUNC       [%d] %.*s \n", token.len, token.len, token.str);
+			break;
+		case PLUS:
+		case MINUS:
+		case ASTERISK:
+			printf("OP BINARY  %.*s \n", token.len, token.str);
+			break;
+		case UNARY_PLUS:
+		case UNARY_MINUS:
+			printf("OP UNARY   %.*s \n", token.len, token.str);
+			break;
+		case LPARENT:
+		case RPARENT:
+			printf("PAREN      %.*s \n", token.len, token.str);
+			break;
+		case ARG_SEP:
+			printf("ARG SEP    %.*s \n", token.len, token.str);
+			break;
+		case ERROR:
+			printf("UNKNOWN    %.*s \n", token.len, token.str);
+			break;
+		default:
+			assert(0);
+			break;
+	}
+}
 
 
 // static int op_left_asso(struct token const * const tok) {
@@ -125,6 +234,15 @@
 // Otherwise, returns 1 and edits the `struct parser_result` with the corresponding error.
 
 // */
+
+
+static int check_lexer_error(const struct lexer_result res) {
+
+	if (res.tarray[res.token_count - 1].type == UNKNOWN) {
+		return 1;
+	}
+	return 0;
+}
 
 
 // static int check_err_null(struct parser_result * const res, char const * const str) {
