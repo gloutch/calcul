@@ -7,31 +7,29 @@ void print_lexer_token(const struct lexer_token * const tok) {
 	switch (tok->type) {
 
 		case NUMBER:
-			printf("NUMBER  [%d] %.*s \n", tok->len, tok->len, tok->str);
-			break;
+			printf("NUMBER  [%d] %.*s", tok->len, tok->len, tok->str);
+			return;
 		case NAME:
-			printf("NAME    [%d] %.*s \n", tok->len, tok->len, tok->str);
-			break;
+			printf("NAME    [%d] %.*s", tok->len, tok->len, tok->str);
+			return;
 		case SYMBOL:
-			printf("SYMBOL  %.*s \n", tok->len, tok->str);
-			break;
+			printf("SYMBOL  %.*s", tok->len, tok->str);
+			return;
 		case LPAREN:
 		case RPAREN:
-			printf("PAREN   %.*s \n", tok->len, tok->str);
-			break;
+			printf("PAREN   %.*s", tok->len, tok->str);
+			return;
 		case COMMA:
-			printf("COMMA   %.*s \n", tok->len, tok->str);
-			break;
+			printf("COMMA   %.*s", tok->len, tok->str);
+			return;
 		case END_LEXER:
-			printf("END \n");
-			break;
+			printf("END");
+			return;
 		case UNKNOWN:
-			printf("UNKNOWN [%d] %.*s... \n", tok->len, tok->len, tok->str);
-			break;
-		default:
-			assert(0);
-			break;
+			printf("UNKNOWN [%d] %.*s...", tok->len, tok->len, tok->str);
+			return;
 	}
+	assert(0);
 }
 
 
@@ -68,7 +66,7 @@ static int try_special(const char * str, struct lexer_token * token) {
 }
 
 
-static int try_symbole(const char * str, struct lexer_token * token) {
+static int try_symbol(const char * str, struct lexer_token * token) {
 
 	switch (str[0]) {
 		case '+':
@@ -76,6 +74,9 @@ static int try_symbole(const char * str, struct lexer_token * token) {
 		case '-':
 		case '/':
 		case '=':
+		case '|':
+		case '&':
+		case '~':
 			token->type = SYMBOL;
 			break;
 		default:
@@ -142,7 +143,7 @@ static void next_token(const char * string, struct lexer_token * token) {
 	if (try_special(str, token)) {
 		return;
 	}
-	if (try_symbole(str, token)) {
+	if (try_symbol(str, token)) {
 		return;
 	}
 	if (try_name(str, token)) {
@@ -202,6 +203,7 @@ void print_lexer_result(const struct lexer_result * res) {
 	for (int i = 0; i < res->token_count; i++) {
 		printf("%3d ", i);
 		print_lexer_token(&(res->tarray[i]));
+		printf("\n");
 	}
 }
 
@@ -327,7 +329,8 @@ void test_lexer() {
 
 	printf(" count_token\n");
 	assert(count_token("1 2 3") == 4); // (3 * INT_NUM) + END_LEXER
-	assert(count_token("1 . 3") == 2); // stops at . UNKNONW
+	assert(count_token("1 § 3") == 2); // stops at § UNKNONW
+
 
 
 	printf(" lexer\n");

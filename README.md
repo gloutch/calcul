@@ -49,7 +49,7 @@ Run `make tst` to compile the `test` executable which runs tests over the whole 
 Otherwise, I typed expression in the console to see if it works as I wanted. For instance, an expression designed to challenge the parser is
 
 ```c
-12 + -(13.0 * var_1 - max(-1, 2))
+12 + -(13.0 * +var_1 - max(-1, 2))
 ```
 
 
@@ -70,9 +70,20 @@ make mrproper
 
 
 
+## About the expression
+
+[precedence](https://en.wikipedia.org/wiki/Order_of_operations#Programming_languages)
+
+[associative property](https://en.wikipedia.org/wiki/Associative_property)
+
+### Add operator
+
+
+
 ## TODO list
 
 - [x] write a `test` target in makefile
 - [x] write a target with cflag `-DNDEBUG` to compile a realease
 - [ ] `console` should catch interrupt
 - [ ] write more test for `shunting_yard` and the whole `parser`
+- [ ] write **Add operator** section in readme

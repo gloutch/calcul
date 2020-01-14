@@ -2,7 +2,7 @@
 
 #include "lexer.h"
 #include "stack.h"
-// #include "parser.h"
+#include "parser.h"
 
 /*
 	This file should be compile as an executable to run all test
@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
 	printf("\nrun all tests\n\n");
 
 	test_lexer();
-	// test_parser();
 	test_stack();
+	test_parser();
 	#endif
 
 	return 0;

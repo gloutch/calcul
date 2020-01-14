@@ -25,6 +25,9 @@ compile:$(EXEC)
 run: $(EXEC)
 	./$(EXEC)
 
+rlwrap: $(EXEC) # just like `run` but with `rlwrap` as wrapper
+	rlwrap ./$(EXEC)
+
 $(EXEC): $(OBJ_EXEC)
 	$(CC) $(CFLAGS) $^ -o $@
 

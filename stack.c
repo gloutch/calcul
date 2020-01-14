@@ -107,7 +107,7 @@ static void copy_int(const int * const src, int * const dst) {
 }
 
 static void print_int(const int * const elem) {
-	printf("%d ", *elem);
+	printf(" %d", *elem);
 }
 
 void test_stack() {
@@ -118,7 +118,7 @@ void test_stack() {
 	#else
 
 	printf("STACK: \n");
-	int count = 10;
+	int count = 7;
 
 	struct stack * const s = stack_malloc(sizeof(int), count, (stack_copy_elem) copy_int);
 
@@ -145,7 +145,7 @@ void test_stack() {
 
 	stack_print(s, (stack_print_elem) print_int); // print
 	stack_reverse(s); // reverse
-	printf("\n");
+	printf(" -");
 	stack_print(s, (stack_print_elem) print_int); // print again
 
 	// pop all
@@ -161,7 +161,7 @@ void test_stack() {
 
 	stack_free(s);
 
-	printf("done\n");
+	printf("\ndone\n");
 	#endif
 }
 

@@ -35,15 +35,16 @@ struct lexer_token {
 	int len;
 };
 
+void print_lexer_token(const struct lexer_token * const tok);
+
+
+
 struct lexer_result {
 	const struct lexer_token * tarray;
 	int token_count;
 };
 
-
 struct lexer_result lexer(const char * string);
-
-void print_lexer_token(const struct lexer_token * const tok);
 
 void print_lexer_result(const struct lexer_result * res);
 

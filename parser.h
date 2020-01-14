@@ -10,7 +10,6 @@
 #include "stack.h"
 #include "string.h"
 
-
 /*
 
 The utimate result of the parser is a `struct parser_result`
@@ -21,7 +20,7 @@ If everything went well,
 
 Otherwise,
 `type` describes the error
-`rpn` is NULL or it contains one token pointing to the error
+`rpn` contains a token which explicit the error
 
 Note: then the stack had to be free
 
@@ -51,10 +50,19 @@ struct parser_token {
 	int len;
 };
 
+void print_parser_token(const struct parser_token * const token);
+
+void copy_parser_token(const struct parser_token * const src, struct parser_token * const dst);
+
+
+
 enum result_type {
 	CORRECT,		// everything turned great :D
-	ERR_TOKEN,		// unknown token
-	ERR_PARENT		// missing parenthesis
+	ERR_SYM,		// lexer unknown symbol  
+	ERR_TOKEN,		// parser unknown token
+	ERR_PARENT,		// missing parenthesis
+	ERR_ARG_SEP,	// missplaced comma
+	ERR_UNEXPECT,	// unexpected token
 };
 
 struct parser_result {
@@ -62,20 +70,12 @@ struct parser_result {
 	struct stack * rpn;
 };
 
+struct parser_result parser(char const * string);
 
-struct parser_token * convert_token(const struct lexer_result lex);
+void print_rpn_stack(struct stack const * const rpn);
 
-void print_parser_token(const struct parser_token token);
 
-// struct parser_result parser(char const * string);
-
-// void print_RPN_stack(struct stack const * const RPN);
-
-// void print_token(struct token const * const tok);
-
-// void copy_token(struct token const * const src, struct token * const dst);
-
-// void test_parser();
+void test_parser();
 
 
 #endif // PARSER_H

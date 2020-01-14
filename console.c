@@ -10,11 +10,9 @@ static void print_intro_msg() {
 	printf(CONSOLE_INTRO_MSG);
 }
 
-
 static void print_prompt() {
 	printf(CONSOLE_PROMPT);
 }
-
 
 static int check_leave_cmd(char const * const input) {
 	if (strncmp(input, CONSOLE_QUIT_WORD, strlen(CONSOLE_QUIT_WORD)) == 0) {
@@ -23,60 +21,67 @@ static int check_leave_cmd(char const * const input) {
 	return 0;
 }
 
-
 static void print_leave_msg() {
 	printf(CONSOLE_QUIT_MSG);
 }
 
-
-// static void print_cursor(char const * input, char const * cursor) {
-// 	// print '^' under the charactere pointed by `cursor` in `input`
-// 	int offset = cursor - input + strlen(CONSOLE_PROMPT);
-// 	// TODO find a format srting that does the loop
-// 	for (int i = 0; i < offset; i++) {
-// 		printf(" ");
-// 	}
-// 	printf("^\n");
-// }
+static void print_cursor(char const * input, char const * cursor) {
+	// print '^' under the charactere pointed by `cursor` in `input`
+	int offset = cursor - input + strlen(CONSOLE_PROMPT);
+	// TODO find a format srting that does the loop
+	for (int i = 0; i < offset; i++) {
+		printf(" ");
+	}
+	printf("^\n");
+}
 
 
 /*
 	PARSER ERROR
 */
 
+static void print_parser_error(char const * input, struct parser_result error) {
 
-// static void print_parser_error(char const * input, struct parser_result error) {
+	// get the first token
+	struct parser_token t1;
+	stack_pop(error.rpn, &t1);
 
-// 	// get the token
-// 	struct token error_token;
-// 	if (error.RPN_stack != NULL) {
-// 		stack_pop(error.RPN_stack, &error_token);
-// 		stack_free(error.RPN_stack);
-// 	}
+	print_cursor(input, t1.str);
+	switch (error.type) {
 
-// 	switch (error.type) {
+		case ERR_SYM:
+			assert(t1.type == ERROR);
+			printf("Lexer: Unknown symbol '%.*s' \n", t1.len, t1.str);
+			break;
 
-// 		case ERR_NULL:
-// 			printf("NULL string \\_(^.^)_/ \n");
-// 			break;
+		case ERR_TOKEN:
+			assert(t1.type == ERROR);
+			printf("Parser: Unknown token '%.*s' \n", t1.len, t1.str);
+			break;
 
-// 		case ERR_TOKEN:
-// 			assert(error_token.type == ERROR);
-// 			print_cursor(input, error_token.str);
-// 			printf("Unknown token '%.*s'\n", error_token.len, error_token.str);
-// 			break;
+		case ERR_PARENT:
+			assert((t1.type == LPARENT) || (t1.type == RPARENT));
+			printf("Parser: Mismatch parenthesis '%.*s' \n", t1.len, t1.str);
+			break;
 
-// 		case ERR_PARENT:
-// 			assert((error_token.type == LP) || (error_token.type == RP));
-// 			print_cursor(input, error_token.str);
-// 			printf("Mismatch parenthesis '%.*s'\n", error_token.len, error_token.str);
-// 			break;
+		case ERR_ARG_SEP: {
+			assert(t1.type == ARG_SEP);
+			printf("Parser: Misplaces argument separator '%.*s' \n", t1.len, t1.str);
+			break;
+		}
+		case ERR_UNEXPECT:
+			printf("Parser: Unexpected token \"");
+			print_parser_token(&t1);
+			printf("\"\n");
+			break;
 
-// 		case CORRECT:
-// 			assert(0);
-// 			break;
-// 	}
-// }
+		case CORRECT:
+			assert(0);
+			break;
+	}
+	printf("\n");
+	stack_free(error.rpn);
+}
 
 
 
@@ -100,34 +105,13 @@ void console() {
 			break;
 		}
 
-		struct lexer_result lex = lexer(line);
-
-		printf("> lexer \n");
-		print_lexer_result(&lex);
-		
-		struct parser_token * token = convert_token(lex);
-
-		printf("> parser\n");
-		for (int i = 0; i < (lex.token_count - 1); i++) {
-			print_parser_token(token[i]);
+		struct parser_result res = parser(line);
+		if (res.type != CORRECT) {
+			print_parser_error(line, res);
+			continue;
 		}
-
-		printf("> clean\n");
-		free((void *) token);
-		free_lexer_result(lex);
-		printf("\n");
-
-		// struct parser_result res = parser(line);
-		// if (res.type != CORRECT) {
-		// 	print_parser_error(line, res);
-		// 	continue;
-		// }
-
-		// TODO
-		// printf("Reverse Polish Notation ");
-		// print_RPN_stack(res.RPN_stack);
-		// printf("\n");
-		// stack_free(res.RPN_stack);
+		print_rpn_stack(res.rpn);
+		stack_free(res.rpn);
 
 	}
 	print_leave_msg();
