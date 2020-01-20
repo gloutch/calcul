@@ -123,7 +123,7 @@ static int try_number(const char * str, struct lexer_token * token) {
 		return 1;
 	}
 
-	i++; // pass the '.' index
+	i++; // skip the '.' index
 	while (isdigit(str[i])) { // decimal part
 		i++;
 	}
@@ -170,6 +170,7 @@ static int count_token(const char * string) {
 		next_token(string, &token);
 		count++;
 	}
+	assert(count > 0);
 	return count;
 }
 
@@ -180,7 +181,7 @@ struct lexer_result lexer(const char * string) {
 	int count = count_token(string);
 
 	struct lexer_token * tarray = malloc(sizeof(struct lexer_token) * count);
-	CHECK_MALLOC(tarray, "NULL malloc in lexer (lexer.c)\n");
+	CHECK_MALLOC(tarray, " lexer (lexer.c) ");
 
 	struct lexer_token token;
 
@@ -192,15 +193,15 @@ struct lexer_result lexer(const char * string) {
 
 	struct lexer_result res;
 	res.tarray = tarray;
-	res.token_count = count;
+	res.size = count - 1; // then tarray[size] is valid
 	return res;
 }
 
 
 void print_lexer_result(const struct lexer_result * res) {
 
-	printf("[%d]\n", res->token_count);
-	for (int i = 0; i < res->token_count; i++) {
+	printf("[%d] size \n", res->size);
+	for (int i = 0; i <= res->size; i++) {
 		printf("%3d ", i);
 		print_lexer_token(&(res->tarray[i]));
 		printf("\n");
@@ -209,7 +210,7 @@ void print_lexer_result(const struct lexer_result * res) {
 
 
 void free_lexer_result(struct lexer_result res) {
-	res.token_count = 0;
+	res.size = 0;
 	free((void *) res.tarray);
 }
 
@@ -336,7 +337,7 @@ void test_lexer() {
 	printf(" lexer\n");
 	struct lexer_result res = lexer("12 +  ( 3.0 * 4 +   18.18)  + (3*4 )");
 
-	assert(res.token_count == 16);
+	assert(res.size == 15);
 	assert(res.tarray[0].type  == NUMBER);
 	assert(res.tarray[1].type  == SYMBOL);
 	assert(res.tarray[2].type  == LPAREN);

@@ -5,7 +5,6 @@
 	COSMETIC
 */
 
-
 static void print_intro_msg() {
 	printf(CONSOLE_INTRO_MSG);
 }
@@ -43,8 +42,8 @@ static void print_cursor(char const * input, char const * cursor) {
 static void print_parser_error(char const * input, struct parser_result error) {
 
 	// get the first token
-	struct parser_token t1;
-	stack_pop(error.rpn, &t1);
+	assert(error.size > 0);
+	struct parser_token t1 = error.tarray[0];
 
 	print_cursor(input, t1.str);
 	switch (error.type) {
@@ -80,13 +79,13 @@ static void print_parser_error(char const * input, struct parser_result error) {
 			break;
 	}
 	printf("\n");
-	stack_free(error.rpn);
 }
 
 
 
-
-
+/*
+	CONSOLE
+*/
 
 void console() {
 
@@ -101,19 +100,24 @@ void console() {
 		print_prompt();
 		getline(&line, &linecap, stdin);
 		if (check_leave_cmd(line)) {
-			free(line);
 			break;
 		}
 
-		struct parser_result res = parser(line);
-		if (res.type != CORRECT) {
-			print_parser_error(line, res);
+		struct parser_result exp = parser(line);
+		if (exp.type != CORRECT) {
+			print_parser_error(line, exp);
+			free_parser_result(exp);
 			continue;
 		}
-		print_rpn_stack(res.rpn);
-		stack_free(res.rpn);
+		// print_rpn_stack(exp.rpn);
+
+		// struct number n = eval(exp);
+		// print_number(&n);
+		free_parser_result(exp);
+		printf("\n");
 
 	}
 	print_leave_msg();
+	free(line);
 }
 

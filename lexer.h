@@ -13,7 +13,8 @@
 	The `lexer` returns a `struct lexer_result` which is an malloced array of token.
 
 The lexer stops until it finds an UNKNOWN token or it reachs the end of the string END_LEXER
-Then, the last token of the `tarray` is one of this
+Thus, tarray[size] is either UNKNOWN or END_LEXER and from O to (size -1) it a regular token array
+
 */
 
 enum lexer_token_type {
@@ -41,7 +42,7 @@ void print_lexer_token(const struct lexer_token * const tok);
 
 struct lexer_result {
 	const struct lexer_token * tarray;
-	int token_count;
+	int size;
 };
 
 struct lexer_result lexer(const char * string);

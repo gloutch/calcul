@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "stack.h"
 #include "parser.h"
+#include "shuning_yard.h"
 
 /*
 	This file should be compile as an executable to run all test
@@ -20,8 +21,9 @@ int main(int argc, char *argv[]) {
 	printf("\nrun all tests\n\n");
 
 	test_lexer();
-	test_stack();
 	test_parser();
+	test_stack();
+	test_shuning_yard();
 	#endif
 
 	return 0;

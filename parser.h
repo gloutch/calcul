@@ -16,13 +16,11 @@ The utimate result of the parser is a `struct parser_result`
 
 If everything went well,
 `type == CORRECT`
-`rpn` is a stack of token with the expression in Reverse Polish Notation (easier to evaluate)
+`tarray` is an array of `parer_token`
 
 Otherwise,
 `type` describes the error
-`rpn` contains a token which explicit the error
-
-Note: then the stack had to be free
+`tarray` contains a token which explicit the error
 
 */
 
@@ -67,12 +65,13 @@ enum result_type {
 
 struct parser_result {
 	enum result_type type;
-	struct stack * rpn;
+	struct parser_token * tarray;
+	int size;
 };
 
 struct parser_result parser(char const * string);
 
-void print_rpn_stack(struct stack const * const rpn);
+void free_parser_result(struct parser_result res);
 
 
 void test_parser();

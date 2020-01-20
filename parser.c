@@ -1,6 +1,8 @@
 #include "parser.h"
 
-#define TOKEN_STACK(size) stack_malloc(sizeof(struct parser_token), (size), (stack_copy_elem) copy_parser_token)
+#define TOKEN_STACK(size) stack_malloc(sizeof(struct parser_token), size, (stack_copy_elem) copy_parser_token);
+#define TOKEN_ARRAY(size) (struct parser_token *) malloc(sizeof(struct parser_token) * (size));
+
 
 
 /*
@@ -97,24 +99,29 @@ static enum parser_token_type lexer_token_to_parser_token(int i, int size, const
 	}
 }
 
-struct parser_token * convert_token(int size, const struct lexer_token * lex) {
+static struct parser_result convert_token(const struct lexer_result * lex) {
 
-	struct parser_token * token_array = malloc(sizeof(struct parser_token) * size);
+	struct parser_token * token_array = TOKEN_ARRAY(lex->size);
 	CHECK_MALLOC(token_array, "NULL malloc in convert_token\n");
 	struct parser_token token;
 
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < lex->size; i++) {
 
-		token.type = lexer_token_to_parser_token(i, size, lex);
-		token.str  = lex[i].str;
-		token.len  = lex[i].len;
+		token.type = lexer_token_to_parser_token(i, lex->size, lex->tarray);
+		token.str  = lex->tarray[i].str;
+		token.len  = lex->tarray[i].len;
 		token_array[i] = token;
 
 		if (token.type == ERROR) { // stops if an error occurs
 			break;
 		}
 	}
-	return token_array;
+
+	struct parser_result res;
+	res.type   = CORRECT; // for now
+	res.tarray = token_array;
+	res.size   = lex->size;
+	return res;
 }
 
 
@@ -127,35 +134,40 @@ Otherwise, returns 1 and edits the `struct parser_result` with the corresponding
 
 */
 
-static int create_parser_err(struct parser_result * res, enum result_type err_type, const struct parser_token * err_token) {
-	res->type = err_type;
-	res->rpn  = TOKEN_STACK(1);
-	CHECK_MALLOC(res->rpn, "NULL malloc in create_parser_err\n");
-	stack_push(res->rpn, err_token);
+static int create_parser_err(struct parser_result * res, enum result_type err_type, struct parser_token err_token) {
+	free(res->tarray);
+	res->type    = err_type;
+	res->tarray  = TOKEN_ARRAY(1);
+	CHECK_MALLOC(res->tarray, " create_parser_err (parser.c) ");
+	res->tarray[0] = err_token;
+	res->size      = 1;
 	return 1;
 }
 
 // check if lexer found an UNKNOWN token
 static int check_lexer_err(struct parser_result * res, const struct lexer_result lex) {
 
-	if (lex.tarray[lex.token_count - 1].type != UNKNOWN) {
+	if (lex.tarray[lex.size].type != UNKNOWN) {
 		return 0;
 	}
-	struct lexer_token lexer_err = lex.tarray[lex.token_count - 1];
+	struct lexer_token lexer_err = lex.tarray[lex.size];
 	// create the `parser_token` from the `lexer_token`
 	struct parser_token parser_err;
 	parser_err.type = ERROR;
 	parser_err.str  = lexer_err.str;
 	parser_err.len  = lexer_err.len;
-	return create_parser_err(res, ERR_SYM, &parser_err);
+	return create_parser_err(res, ERR_SYM, parser_err);
 }
 
 // check if parser didn't recognise a token and typed it as ERROR
-static int check_parser_token_err(struct parser_result * res, int n, const struct parser_token * token) {
+static int check_parser_token_err(struct parser_result * res) {
+
+	int n = res->size;
+	const struct parser_token * token = res->tarray;
 
 	for (int i = 0; i < n; i++) {
 		if (token[i].type == ERROR) {
-			return create_parser_err(res, ERR_TOKEN, &token[i]);
+			return create_parser_err(res, ERR_TOKEN, token[i]);
 		}
 	}
 	return 0;
@@ -184,7 +196,10 @@ static int correct_parenthesis(int n, const struct parser_token * token) {
 }
 
 // call `correct_parenthesis` and then find the wrong one (using stack)
-static int check_parenthesis(struct parser_result * res, int n, const struct parser_token * token) {
+static int check_parenthesis(struct parser_result * res) {
+
+	int n = res->size;
+	const struct parser_token * token = res->tarray;
 
 	int size = correct_parenthesis(n, token);
 	if (size == 0) {
@@ -192,7 +207,7 @@ static int check_parenthesis(struct parser_result * res, int n, const struct par
 	}
 
 	struct stack * stack = TOKEN_STACK(size);
-	CHECK_MALLOC(stack, "NULL malloc in check_parenthesis\n");
+	CHECK_MALLOC(stack, " check_parenthesis (parser.c) ");
 	struct parser_token tmp;
 	for (int i = 0; i < n; i++) {
 
@@ -209,8 +224,8 @@ static int check_parenthesis(struct parser_result * res, int n, const struct par
 	}
 	assert(!stack_empty(stack)); //because parenthesis are wrong
 
-	res->type = ERR_PARENT;
-	res->rpn  = stack;
+	stack_pop(stack, &tmp);
+	create_parser_err(res, ERR_PARENT, tmp);
 	return 1;
 }
 
@@ -247,7 +262,10 @@ static int correct_next_token(enum parser_token_type curr, enum parser_token_typ
 }
 
 // check basic rules about order of token of a math expression
-static int check_token_order(struct parser_result * res, int n, const struct parser_token * token) {
+static int check_token_order(struct parser_result * res) {
+
+	int n = res->size;
+	const struct parser_token * token = res->tarray;
 
 	if (n <= 0) { // no token to check
 		return 0;
@@ -255,20 +273,20 @@ static int check_token_order(struct parser_result * res, int n, const struct par
 
 	enum parser_token_type init = token[0].type;
 	if (!( OPERAND(init) || UNARY(init) || (init == FUNC_NAME) || (init == LPARENT) )) { // check first token
-		return create_parser_err(res, ERR_UNEXPECT, &token[0]);
+		return create_parser_err(res, ERR_UNEXPECT, token[0]);
 	}
 
 	for (int i = 1; i < n; i++) {
 		const struct parser_token t1 = token[i - 1];
 		const struct parser_token t2 = token[i];
 		if (!correct_next_token(t1.type, t2.type)) {
-			return create_parser_err(res, ERR_UNEXPECT, &t2);
+			return create_parser_err(res, ERR_UNEXPECT, t2);
 		}
 	}
 
 	enum parser_token_type last = token[n - 1].type; // check last token
 	if (!( OPERAND(last) || (last == RPARENT) )) {
-		return create_parser_err(res, ERR_UNEXPECT, &token[n - 1]);
+		return create_parser_err(res, ERR_UNEXPECT, token[n - 1]);
 	}
 	return 0;
 }
@@ -277,9 +295,12 @@ static int check_token_order(struct parser_result * res, int n, const struct par
 // assume `correct_parenthesis` to not check this again
 //    and `check_token_order` to assure FUNC_NAME is followed by LPARENT
 // check ARG_SEP are in the right penrenthesis scope (using stack)
-static int check_arg_sep(struct parser_result * res, int n, const struct parser_token * token) {
+static int check_arg_sep(struct parser_result * res) {
+	int n = res->size;
+	const struct parser_token * token = res->tarray;
+
 	assert(correct_parenthesis(n, token) == 0);
-	assert(check_token_order(res, n, token) == 0);
+	assert(check_token_order(res) == 0);
 
 	struct stack * scope = TOKEN_STACK(n); // scope are functions or parenthesis
 	struct parser_token dump;
@@ -305,9 +326,8 @@ static int check_arg_sep(struct parser_result * res, int n, const struct parser_
 
 			case ARG_SEP: {							// check that the last scope is a function
 				if (stack_empty(scope) || (((struct parser_token *) stack_peek(scope))->type != FUNC_NAME)) {
-					stack_push(scope, &token[i]);
-					res->type = ERR_ARG_SEP;
-					res->rpn  = scope;
+					create_parser_err(res, ERR_ARG_SEP, token[i]);
+					free(scope);
 					return 1;
 				}
 				i++;
@@ -324,137 +344,6 @@ static int check_arg_sep(struct parser_result * res, int n, const struct parser_
 }
 
 
-/*
-	CHANGE SYNTAX (SHUNING YARD)
-*/
-
-// < 0 means left associative
-//  0  means 
-// 0 < means right associative
-static int assoc(const struct parser_token * const token) {
-	switch (token->type) {
-
-		case MINUS:
-			return -1;
-		case PLUS:
-		case ASTERISK:
-		case LPARENT:
-		case RPARENT:
-			return 0;
-		case UNARY_PLUS:
-		case UNARY_MINUS:
-			return 1;
-		default:
-			assert(0);
-			return 0;
-	}
-}
-
-static int preced(const struct parser_token * const token) {
-	switch (token->type) {
-
-		case UNARY_PLUS:
-		case UNARY_MINUS:
-			return 14;
-		case ASTERISK:
-			return 13;
-		case PLUS:
-		case MINUS:
-			return 12;
-		case LPARENT:
-		case RPARENT:
-			return 1;
-		default:
-			assert(0);
-			return 0;
-	}
-}
-
-// let's assume the parenthesis are correct
-static void shunting_yard_wye(const struct parser_token * input, struct stack * operator, struct stack * output) {
-
-	switch (input->type) {
-
-		case NUM_OPERAND:	// operand
-		case VAR_OPERAND: {
-			stack_push(output, input);
-			return;
-		}
-		case LPARENT:		// (
-		case FUNC_NAME: {	// function
-			stack_push(operator, input);
-			return;
-		}
-		case ARG_SEP: {		// ,
-			while (((struct parser_token *) stack_peek(operator))->type != LPARENT) {
-				struct parser_token tmp;
-				stack_pop(operator, &tmp);
-				stack_push(output, &tmp);
-			}
-			return;
-		}
-		case PLUS:			// operator
-		case MINUS:
-		case ASTERISK:
-		case UNARY_PLUS:
-		case UNARY_MINUS: {
-			while (!stack_empty(operator)) {
-				struct parser_token * top = stack_peek(operator);
-				if ( !((preced(top) > preced(input)) || ((preced(top) == preced(input)) && (assoc(top) < 0))) ) {
-					break;
-				}
-				struct parser_token tmp;
-				stack_pop(operator, &tmp);
-				stack_push(output, &tmp);
-			}
-			stack_push(operator, input);
-			return;
-		}
-		case RPARENT: { 	// )
-			struct parser_token tmp;
-			stack_pop(operator, &tmp);
-			while (tmp.type != LPARENT) {
-				stack_push(output, &tmp);
-				stack_pop(operator, &tmp);
-			} // discard LPARENT
-			if ((stack_empty(operator) || (((struct parser_token *) stack_peek(operator))->type != FUNC_NAME))) {
-				return;
-			}
-			stack_pop(operator, &tmp);
-			stack_push(output, &tmp);
-			return;
-		}
-		case ERROR:
-			return;
-	}
-	assert(0);
-	return;
-}
-
-static struct stack * const shunting_yard(int n, const struct parser_token * token) {
-
-	// oversized stacks
-	struct stack * output   = TOKEN_STACK(n);
-	struct stack * operator = TOKEN_STACK(n);
-
-	for (int i = 0; i < n; i++) {
-		shunting_yard_wye(&token[i], operator, output);
-	}
-
-	while (!stack_empty(operator)) {
-		struct parser_token tmp;
-		stack_pop(operator, &tmp);
-		stack_push(output, &tmp);
-	}
-	assert(stack_empty(operator));
-
-	// clear
-	stack_free(operator);
-	stack_reverse(output);
-	return output;
-}
-
-
 
 /*
 	PARSER
@@ -464,8 +353,6 @@ static struct stack * const shunting_yard(int n, const struct parser_token * tok
 struct parser_result parser(char const * string) {
 
 	struct parser_result res;
-	res.type = CORRECT;
-	res.rpn  = NULL;
 
 	// get lexer_token
 	struct lexer_result lex = lexer(string);
@@ -474,48 +361,31 @@ struct parser_result parser(char const * string) {
 		return res;
 	}
 	
-	// lexer => parser data
-	int size = lex.token_count - 1; // without END_LEXER
-	struct parser_token * token = convert_token(size, lex.tarray);
+	// lexer_token => parser_token
+	res = convert_token(&lex);
 	free_lexer_result(lex);
 
-	if (check_parser_token_err(&res, size, token)) {
-		free(token);
-		return res;
-	}
-
 	// now, work on parser_token
-
-	if (check_parenthesis(&res, size, token)) {
-		free(token);
+	if (check_parser_token_err(&res)) {
 		return res;
 	}
-	if (check_token_order(&res, size, token)) {
-		free(token);
+	if (check_parenthesis(&res)) {
+		return res;
+	}
+	if (check_token_order(&res)) {
 		return res;
 	}
 	// and sorry, I failed to check the syntaxe without additional allocation
-	if (check_arg_sep(&res, size, token)) {
-		free(token);
+	if (check_arg_sep(&res)) {
 		return res;
 	}
-
-	// I assume the tokens have a correct enough syntaxe to call shunting yard without bug
-	res.type = CORRECT;
-	res.rpn  = shunting_yard(size, token);
-	free(token);
 	return res;
 }
 
-static void print_rpn_stack_token(const struct parser_token * const token) {
-	print_parser_token(token);
-	printf("\n");
+void free_parser_result(struct parser_result res) {
+	res.size = 0;
+	free(res.tarray);
 }
-
-void print_rpn_stack(struct stack const * const rpn) {
-	stack_print(rpn, (stack_print_elem) print_rpn_stack_token);
-}
-
 
 
 /*
@@ -544,9 +414,9 @@ void test_parser() {
 
 	printf(" lexer_token_to_parser_token\n");
 	struct lexer_result lex2 = lexer("12 + -(13.0 * +var_1 - max(-1, 2)) §");
-	assert(lex2.token_count == 18);
+	assert(lex2.size == 17);
 
-	int size2 = lex2.token_count;
+	int size2 = lex2.size;
 	assert(lexer_token_to_parser_token(0,  size2, lex2.tarray) == NUM_OPERAND);
 	assert(lexer_token_to_parser_token(1,  size2, lex2.tarray) == PLUS);
 	assert(lexer_token_to_parser_token(2,  size2, lex2.tarray) == UNARY_MINUS);
@@ -571,8 +441,9 @@ void test_parser() {
 	printf(" check_lexer_err\n");
 	struct lexer_result lex3 = lexer("12 + 3 -"); // count 5
 	struct parser_result res3;
-	res3.type = CORRECT;
-	res3.rpn  = NULL;
+	res3.type   = CORRECT;
+	res3.tarray = NULL;
+	res3.size   = 0;
 
 	assert(check_lexer_err(&res3, lex3) == 0);
 	free_lexer_result(lex3);
@@ -588,27 +459,27 @@ void test_parser() {
 	printf(" correct_parenthesis\n");
 	struct lexer_result lex4 = lexer("() () () ( () () )");
 	assert(check_lexer_err(NULL, lex4) == 0);
-	int size4 = lex4.token_count - 1;
-	struct parser_token * token4 = convert_token(size4, lex4.tarray);
+	int size4 = lex4.size;
+	struct parser_result pars4 = convert_token(&lex4);
 	free_lexer_result(lex4);
-	assert(correct_parenthesis(size4, token4) == 0);
-	free(token4);
+	assert(correct_parenthesis(size4, pars4.tarray) == 0);
+	free_parser_result(pars4);
 
 	lex4 = lexer("( () )) ((()))");
 	assert(check_lexer_err(NULL, lex4) == 0);
-	size4 = lex4.token_count - 1;
-	token4 = convert_token(size4, lex4.tarray);
+	size4 = lex4.size;
+	pars4 = convert_token(&lex4);
 	free_lexer_result(lex4);
-	assert(correct_parenthesis(size4, token4) == 3);
-	free(token4);
+	assert(correct_parenthesis(size4, pars4.tarray) == 3);
+	free_parser_result(pars4);
 
 	lex4 = lexer("( () (()))");
 	assert(check_lexer_err(NULL, lex4) == 0);
-	size4 = lex4.token_count - 1;
-	token4 = convert_token(size4, lex4.tarray);
+	size4 = lex4.size;
+	pars4 = convert_token(&lex4);
 	free_lexer_result(lex4);
-	assert(correct_parenthesis(size4, token4) == 0);
-	free(token4);
+	assert(correct_parenthesis(size4, pars4.tarray) == 0);
+	free_parser_result(pars4);
 
 
 	printf("done\n");

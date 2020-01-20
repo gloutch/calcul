@@ -84,6 +84,7 @@ make mrproper
 
 - [x] write a `test` target in makefile
 - [x] write a target with cflag `-DNDEBUG` to compile a realease
+- [x] Refactore `parser`, have a proper `shuning yard` module for instance
 - [ ] `console` should catch interrupt
-- [ ] write more test for `shunting_yard` and the whole `parser`
+- [ ] write test for `shunting_yard` and the whole `parser`
 - [ ] write **Add operator** section in readme

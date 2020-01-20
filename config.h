@@ -16,11 +16,11 @@
 
 
 // This macro whould be called right after every malloc
-#define CHECK_MALLOC(ptr, msg) {	\
-	if ((ptr) == NULL) {			\
-		perror((msg));				\
-		exit(1);					\
-	}								\
+#define CHECK_MALLOC(ptr, msg) {						\
+	if ((ptr) == NULL) {								\
+		perror("NULL malloc: " msg "\n");				\
+		exit(1);										\
+	}													\
 }
 
 
