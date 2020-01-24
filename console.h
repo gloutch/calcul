@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
-// #include "eval.h"
-// #include "number.h"
+#include "eval.h"
+#include "number.h"
 #include "parser.h"
 
 

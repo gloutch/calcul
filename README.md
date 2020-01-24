@@ -76,6 +76,8 @@ make mrproper
 
 [associative property](https://en.wikipedia.org/wiki/Associative_property)
 
+[base convertisor](https://www.convzone.com/hex-to-decimal/) (hex -> dec)
+
 ### Add operator
 
 

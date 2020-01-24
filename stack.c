@@ -107,7 +107,7 @@ static void copy_int(const int * const src, int * const dst) {
 }
 
 static void print_int(const int * const elem) {
-	printf(" %d", *elem);
+	printf("%d.", *elem);
 }
 
 void test_stack() {
@@ -143,9 +143,10 @@ void test_stack() {
 	assert(stack_full(s));
 	assert(stack_size(s) == count);
 
+	printf(" ");
 	stack_print(s, (stack_print_elem) print_int); // print
 	stack_reverse(s); // reverse
-	printf(" -");
+	printf(" - ");
 	stack_print(s, (stack_print_elem) print_int); // print again
 
 	// pop all

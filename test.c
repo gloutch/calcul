@@ -1,9 +1,11 @@
 #include <stdio.h>
 
+#include "big_int.h"
 #include "lexer.h"
 #include "stack.h"
+#include "number.h"
 #include "parser.h"
-#include "shuning_yard.h"
+#include "shunting_yard.h"
 
 /*
 	This file should be compile as an executable to run all test
@@ -23,7 +25,10 @@ int main(int argc, char *argv[]) {
 	test_lexer();
 	test_parser();
 	test_stack();
-	test_shuning_yard();
+	test_shunting_yard();
+	test_number();
+	test_big_int();
+
 	#endif
 
 	return 0;

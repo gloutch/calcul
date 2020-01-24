@@ -1,4 +1,4 @@
-#include "shuning_yard.h"
+#include "shunting_yard.h"
 
 #define TOKEN_STACK(size) stack_malloc(sizeof(struct parser_token), size, (stack_copy_elem) copy_parser_token);
 
@@ -147,12 +147,12 @@ void print_rpn_stack(struct stack const * const rpn_stack) {
 */
 
 
-void test_shuning_yard() {
+void test_shunting_yard() {
 	#ifdef NDEBUG
 	printf("COMPILE ERROR: test should NOT be compile with '-DNDEBUG'\n\n");
 	exit(1);
 	#else
-	printf("SHUNING YARD\n");
+	printf("SHUNTING YARD:\n");
 	// TODO
 	printf("done\n");
 	#endif

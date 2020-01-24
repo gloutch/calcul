@@ -109,12 +109,11 @@ void console() {
 			free_parser_result(exp);
 			continue;
 		}
-		// print_rpn_stack(exp.rpn);
 
-		// struct number n = eval(exp);
-		// print_number(&n);
+		struct number n = eval(exp);
+		print_number(&n);
 		free_parser_result(exp);
-		printf("\n");
+		printf("\n\n");
 
 	}
 	print_leave_msg();
