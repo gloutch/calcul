@@ -2,34 +2,40 @@
 #define BIG_INT_H
 
 #include <assert.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
 
 
-struct big_int * str_to_big(int len, const char * str, unsigned int base);
-
 struct big_int * long_to_big(long l);
 
-
-// operation (pls use the returned ptr instead of b1) b2 may be free after
-// struct big_int * add_big_int(struct big_int * b1, const struct big_int * b2); // b1 = b1 + b2
-
-// struct big_int * sub_big_int(struct big_int * b1, const struct big_int * b2);
-
-// struct big_int * mult_big_int(struct big_int * b1, const struct big_int * b2);
+struct big_int * str_to_big(int len, const char * str, unsigned int base);
 
 
-// void neg_big_int(struct big_int * big);
+void big_int_neg(struct big_int * b);
 
-void print_big_int(const struct big_int * const big);
+void big_int_swap(struct big_int * b1, struct big_int * b2);
 
-void free_big_int(struct big_int * big);
+int big_int_cmp(const struct big_int * b1, const struct big_int * b2);
+
+
+// operation (b2 may be free after)
+// b1 is reused to store the result
+struct big_int * big_int_add(struct big_int * b1, struct big_int * b2);
+
+struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2);
+
+struct big_int * big_int_mul(struct big_int * b1, struct big_int * b2);
+
+
+void big_int_print(const struct big_int * const big);
+
+void big_int_free(struct big_int * big);
 
 
 // test
 void test_big_int();
 
 #endif // BIG_INT_H
+

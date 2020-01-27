@@ -9,7 +9,6 @@ else
 	CFLAGS=-std=c99 -Wall
 endif
 
-
 EXEC=main
 TEST=test
 
@@ -52,3 +51,4 @@ clear: clean
 
 mrproper: clean
 	rm -rvf $(EXEC) $(TEST)
+

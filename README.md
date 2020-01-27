@@ -90,3 +90,5 @@ make mrproper
 - [ ] `console` should catch interrupt
 - [ ] write test for `shunting_yard` and the whole `parser`
 - [ ] write **Add operator** section in readme
+- [ ] `add_big_int` handle sign, as well as `mult_big_int`
+
