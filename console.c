@@ -15,7 +15,7 @@ static void print_prompt() {
 
 static int check_leave_cmd(char const * const input) {
 	if (strncmp(input, CONSOLE_QUIT_WORD, strlen(CONSOLE_QUIT_WORD)) == 0) {
-		log_info("console leave command '" CONSOLE_QUIT_WORD "' found");
+		log_trace("console leave command '" CONSOLE_QUIT_WORD "' found");
 		return 1;
 	}
 	return 0;
@@ -90,7 +90,7 @@ static void print_parser_error(char const * input, struct parser_result error) {
 
 void console() {
 
-	size_t linecap = CONSOLE_DEFAULT_SIZE;
+	size_t linecap = CONSOLE_LINE_SIZE;
 	char *line = malloc(linecap);
 	CHECK_MALLOC(line, "NULL malloc in console\n");
 
@@ -111,14 +111,17 @@ void console() {
 			continue;
 		}
 
-		struct number n = eval(exp);
-		number_print(&n);
+		if (exp.size > 0) {
+			struct number n = eval(exp);
+			number_print(&n);
+			number_free(n);
+		}
+
 		free_parser_result(exp);
 		printf("\n\n");
-
 	}
 	print_leave_msg();
-	free(line);
 	LOG_FREE(line);
+	free(line);
 }
 

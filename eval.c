@@ -1,28 +1,16 @@
 #include "eval.h"
 
 
+typedef void (bin_op)(struct number * n1, struct number * n2);
 
-static struct number binary_op(struct stack * operands, enum parser_token_type op) {
+static struct number binary_op(struct stack * operands, bin_op operation) {
 
 	struct number n2;
 	stack_pop(operands, &n2);
 	struct number n1;
 	stack_pop(operands, &n1);
-
-	switch (op) {
-
-		case PLUS:
-			n1.data.integer += n2.data.integer;
-			break;
-		case MINUS:
-			n1.data.integer -= n2.data.integer;
-			break;
-		case ASTERISK:
-			n1.data.integer *= n2.data.integer;
-			break;
-		default:
-			assert(0);
-	}
+	operation(&n1, &n2);
+	number_free(n2);
 	return n1;
 }
 
@@ -33,30 +21,37 @@ static void eval_token(const struct parser_token exp_token, struct stack * opera
 
 		case NUM_OPERAND: {
 			struct number num = str_to_number(exp_token.len, exp_token.str, 10);
-			assert(num.type == INTEGER);
 			stack_push(operands, &num);
 			return;
 		}
 
 		case VAR_OPERAND:
 		case FUNC_NAME:
-			assert(0);
+			log_fatal("Sorry, '%.*s' no variable management yet ", exp_token.len, exp_token.str);
+			exit(0);
 			return;
 
-		case PLUS:
-		case MINUS:
+		case PLUS: {
+			struct number res = binary_op(operands, number_add);
+			stack_push(operands, &res);
+			return;
+		}
+		case MINUS: {
+			struct number res = binary_op(operands, number_sub);
+			stack_push(operands, &res);
+			return;
+		}
 		case ASTERISK: {
-			struct number res = binary_op(operands, exp_token.type);
+			struct number res = binary_op(operands, number_mul);
 			stack_push(operands, &res);
 			return;
 		}
 
 		case UNARY_PLUS:
 			return;
-
 		case UNARY_MINUS: {
 			struct number * num = stack_peek(operands);
-			num->data.integer = -num->data.integer;
+			number_neg(num);
 			return;
 		}
 
@@ -68,6 +63,7 @@ static void eval_token(const struct parser_token exp_token, struct stack * opera
 
 
 struct number eval(struct parser_result exp) {
+	log_trace("eval");
 
 	struct stack * stack_exp = shunting_yard(exp.size, exp.tarray);
 	// print_rpn_stack(stack_exp);
@@ -88,3 +84,4 @@ struct number eval(struct parser_result exp) {
 	stack_free(operands);
 	return result;
 }
+

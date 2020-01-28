@@ -93,8 +93,8 @@ void stack_free(struct stack * s) {
 	s->copy    = NULL;
 	s->start   = NULL;
 	s->current = NULL;
-	free(s);
 	LOG_FREE(s);
+	free(s);
 }
 
 

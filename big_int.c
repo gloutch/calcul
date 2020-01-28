@@ -142,6 +142,7 @@ struct big_int * str_to_big(int len, const char * str, unsigned int base) {
 
 
 void big_int_neg(struct big_int * b) {
+	log_info("big -%p", b);
 	b->sign = (b->sign == POSITIVE ? NEGATIVE : POSITIVE);
 }
 
@@ -410,8 +411,8 @@ void big_int_print(const struct big_int * const big) {
 void big_int_free(struct big_int * big) {
 	big->len = 0;
 	big->cap = 0;
-	free(big);
 	LOG_FREE(big);
+	free(big);
 }
 
 

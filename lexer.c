@@ -179,6 +179,7 @@ struct lexer_result lexer(const char * string) {
 	assert(string != NULL);
 
 	int count = count_token(string);
+	log_trace("%d token found", count);
 
 	struct lexer_token * tarray = malloc(sizeof(struct lexer_token) * count);
 	CHECK_MALLOC(tarray, " lexer (lexer.c) ");
@@ -211,8 +212,8 @@ void print_lexer_result(const struct lexer_result * res) {
 
 void free_lexer_result(struct lexer_result res) {
 	res.size = 0;
-	free((void *) res.tarray);
 	LOG_FREE(res.tarray);
+	free((void *) res.tarray);
 }
 
 

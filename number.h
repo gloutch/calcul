@@ -15,7 +15,6 @@ struct number {
 	enum {
 		INTEGER,
 		BIG,
-		NAN,
 	} type;
 
 	union {
