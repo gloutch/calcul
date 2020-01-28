@@ -1,12 +1,13 @@
 
 CC=cc
-
 RELEASE?=no
+LOG_LEVEL?=LOG_WARN
 ifeq ($(RELEASE),yes)
-	# release = remove assert
+	# release = remove assert, log quiet
 	CFLAGS=-std=c99 -Wall -DNDEBUG
 else
-	CFLAGS=-std=c99 -Wall
+	# assert + set log level
+	CFLAGS=-std=c99 -Wall -DLOG_USE_COLOR -DLOG_LEVEL=$(LOG_LEVEL)
 endif
 
 EXEC=main
@@ -38,7 +39,7 @@ $(TEST): $(OBJ_TEST)
 
 %.o: %.c %.h config.h
 	$(CC) $(CFLAGS) -c $<
-
+	
 
 
 .PHONY: clean clear mrproper

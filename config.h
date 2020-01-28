@@ -6,6 +6,7 @@
 */
 
 #include <stdio.h>
+#include "log.h"
 
 
 #define CONSOLE_PROMPT ">>> "
@@ -16,12 +17,17 @@
 
 
 // This macro whould be called right after every malloc
-#define CHECK_MALLOC(ptr, msg) {						\
-	if ((ptr) == NULL) {								\
-		perror("NULL malloc: " msg "\n");				\
-		exit(1);										\
-	}													\
+#define CHECK_MALLOC(ptr, msg) {							\
+	log_debug("malloc %p:%s", (ptr), (msg));				\
+	if ((ptr) == NULL) {									\
+		log_fatal("NULL malloc %p:%s", (ptr), (msg));		\
+		perror("NULL malloc: " msg "\n");					\
+		exit(1);											\
+	}														\
 }
+
+#define LOG_MALLOC(ptr) log_debug("malloc %p", (ptr))
+#define LOG_FREE(ptr)   log_debug("free   %p", (ptr))
 
 
 /*	Macro to check that compiler didn't remove `assert`
@@ -31,7 +37,7 @@
 	exit(1);
 #else
 	printf("test: ");
-	printf("done\n");
+	printf("done\n\n");
 #endif
 
 */

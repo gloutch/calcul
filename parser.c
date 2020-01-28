@@ -102,7 +102,7 @@ static enum parser_token_type lexer_token_to_parser_token(int i, int size, const
 static struct parser_result convert_token(const struct lexer_result * lex) {
 
 	struct parser_token * token_array = TOKEN_ARRAY(lex->size);
-	CHECK_MALLOC(token_array, "NULL malloc in convert_token\n");
+	CHECK_MALLOC(token_array, "convert_token\n");
 	struct parser_token token;
 
 	for (int i = 0; i < lex->size; i++) {
@@ -147,6 +147,7 @@ static int create_parser_err(struct parser_result * res, enum result_type err_ty
 // check if lexer found an UNKNOWN token
 static int check_lexer_err(struct parser_result * res, const struct lexer_result lex) {
 
+	log_trace("check lexer error");
 	if (lex.tarray[lex.size].type != UNKNOWN) {
 		return 0;
 	}
@@ -162,6 +163,7 @@ static int check_lexer_err(struct parser_result * res, const struct lexer_result
 // check if parser didn't recognise a token and typed it as ERROR
 static int check_parser_token_err(struct parser_result * res) {
 
+	log_trace("check parser unknown symbol");
 	int n = res->size;
 	const struct parser_token * token = res->tarray;
 
@@ -198,6 +200,7 @@ static int correct_parenthesis(int n, const struct parser_token * token) {
 // call `correct_parenthesis` and then find the wrong one (using stack)
 static int check_parenthesis(struct parser_result * res) {
 
+	log_trace("check parser parenthesis");
 	int n = res->size;
 	const struct parser_token * token = res->tarray;
 
@@ -264,6 +267,7 @@ static int correct_next_token(enum parser_token_type curr, enum parser_token_typ
 // check basic rules about order of token of a math expression
 static int check_token_order(struct parser_result * res) {
 
+	log_trace("check parser token order");
 	int n = res->size;
 	const struct parser_token * token = res->tarray;
 
@@ -296,6 +300,8 @@ static int check_token_order(struct parser_result * res) {
 //    and `check_token_order` to assure FUNC_NAME is followed by LPARENT
 // check ARG_SEP are in the right penrenthesis scope (using stack)
 static int check_arg_sep(struct parser_result * res) {
+
+	log_trace("check parser comma in function arg");
 	int n = res->size;
 	const struct parser_token * token = res->tarray;
 
@@ -385,6 +391,7 @@ struct parser_result parser(char const * string) {
 void free_parser_result(struct parser_result res) {
 	res.size = 0;
 	free(res.tarray);
+	LOG_FREE(res.tarray);
 }
 
 
@@ -449,6 +456,7 @@ void test_parser() {
 	free_lexer_result(lex3);
 	lex3 = lexer("12 + 3 §"); // count 4 
 	assert(check_lexer_err(&res3, lex3) == 1);
+	free_parser_result(res3);
 	free_lexer_result(lex3);
 
 
@@ -482,7 +490,7 @@ void test_parser() {
 	free_parser_result(pars4);
 
 
-	printf("done\n");
+	printf("done\n\n");
 	#endif
 }
 

@@ -7,6 +7,7 @@
 #include <string.h>
 #include "config.h"
 #include "eval.h"
+#include "log.h"
 #include "number.h"
 #include "parser.h"
 

@@ -212,6 +212,7 @@ void print_lexer_result(const struct lexer_result * res) {
 void free_lexer_result(struct lexer_result res) {
 	res.size = 0;
 	free((void *) res.tarray);
+	LOG_FREE(res.tarray);
 }
 
 
@@ -358,7 +359,7 @@ void test_lexer() {
 	free_lexer_result(res);
 
 
-	printf("done\n");
+	printf("done\n\n");
 	#endif
 }
 

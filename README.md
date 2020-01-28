@@ -20,7 +20,9 @@ The result is sent to something that evaluate the expression without error.
 
 ### Restriction
 
-For now, I reduce the math expression to a sentence with few operators (`+`, `*`), parenthesis and no function.
+For now, I reduce the math expression to a sentence with few operators (`+`, `-`, `*`), parenthesis and no function.
+
+It's possible that the code doesn't work on big endian architecture (for instance because of fuction `add_big` in `big_int.c`).
 
 
 
@@ -28,36 +30,27 @@ For now, I reduce the math expression to a sentence with few operators (`+`, `*`
 
 This section justify the responsability of those independent module.
 
-- **big_int**
+- **big_int:** manage huge integer operations
 - **console**
-
 - **eval**
-
-- **lexer**
-
-  Split an input string into an array of `lexer_token`. The lexicon is very small because it focuses on the abstraction on the string.
-
-- **number**
-
-- **parser**
-
-  Check the syntax of the expression based on the ...
-
-- **shunting_yard**
-
-- **stack**
+- **lexer:** splits an input string into an array of `lexer_token`. The lexicon is very small because it focuses on the abstraction on the string.
+- **log**
+- **number:** abstract the computed numbers. The numerical value is store in a `long` as long as possible, then convert into a `big_int` when needed.  
+- **parser:** splits an input string into an array of `parser_token` (based on `lexer`), and then checks the syntax as much as possible.
+- **shunting_yard:** changes an array of `parser_token` into a `stack`of token to process the expression (Reverse Polish Notation).
+- **stack:** stack implementation
 
 
 
 ## Compile
 
-> The make commands are the result of how I work on this project
-
 The classic `make` command compiles the `main` executable. To run it, try `make run`
+
+> The make commands are the result of how I work on this project
 
 ### Release
 
-To compile a **release version** (without inner `assert`), just type
+To compile a **release version** (without inner `assert` and `log`), just type
 
 ```bash
 make RELEASE=yes
@@ -77,16 +70,26 @@ Otherwise, I typed expression in the console to see if it works as I wanted. For
 
 ### Clean
 
-Clean the whole project using run
+Clean the whole project using
 
 ```bash
 make clean
 ```
 
-And include executables with the command
+Included executables with the command
 
 ```bash
 make mrproper
+```
+
+### Log
+
+The release version doesn't output log, while the debug version has level `LOG_WARN` by default.
+
+The log level can be chosen by the setting the variable `LOG_LEVEL`
+
+```makefile
+make run LOG_LEVEL=LOG_INFO
 ```
 
 
@@ -109,7 +112,7 @@ make mrproper
 - [x] write a target with cflag `-DNDEBUG` to compile a realease
 - [x] Refactore `parser`, have a proper `shuning yard` module for instance
 - [x] `big_int_add` handle sign, as well as `big_int_mul`
-- [ ] `console` should catch interrupt
+- [x] `console` should catch interrupt (done with `rlwrap`)
 - [ ] write test for `shunting_yard` and the whole `parser`
 - [ ] write **Add operator** section in readme
 

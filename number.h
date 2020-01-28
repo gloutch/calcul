@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "big_int.h"
+#include "log.h"
 
 
 struct number {

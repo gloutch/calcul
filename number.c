@@ -4,8 +4,10 @@
 
 static void integer_to_big(struct number * num) {
 	assert(num->type == INTEGER);
+	long tmp_log = num->data.integer;
 	num->type = BIG;
 	num->data.big = long_to_big(num->data.integer);
+	log_info("int %ld -> big_int ptr %p", tmp_log, num->data.big);
 }
 
 static struct number long_to_number(long l) {
@@ -20,6 +22,7 @@ struct number str_to_number(int len, const char * str, int base) {
 
 	char * point = strchr(str, '.');
 	if (point != NULL) { // if there is a point
+		log_warn("float %.*s -> int %.*s (sorry, no float yet)", len, str, point - str, str);
 		len = point - str; // for now NO FLOAT
 	}
 
@@ -31,14 +34,11 @@ struct number str_to_number(int len, const char * str, int base) {
 		if (!errno) {
 			return num;
 		}
-		num.type = NAN;
-		return num;
+		log_warn("strtol failed on num %.*s (trying with big_int)", len, str);
 	}
-	else {
-		num.type = BIG;
-		num.data.big = str_to_big(len, str, base);
-		return num;
-	}
+	num.type = BIG;
+	num.data.big = str_to_big(len, str, base);
+	return num;
 }
 
 
@@ -86,9 +86,11 @@ void number_add(struct number * n1, struct number * n2) {
 
 	long res = 0;
 	if (__builtin_saddl_overflow(n1->data.integer, n2->data.integer, &res)) { // overflow has occurred
+		log_info("prevent overflow");
 		add_big(n1, n2);
 		return;
 	}
+	log_info("int %ld + %ld = %ld", n1->data.integer, n2->data.integer, res);
 	n1->data.integer = res;
 }
 
@@ -196,7 +198,7 @@ void test_number() {
 	number_free(r12);
 
 
-	printf("done\n");
+	printf("done\n\n");
 	#endif
 }
 

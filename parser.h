@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "config.h"
 #include "lexer.h"
+#include "log.h"
 #include "stack.h"
 #include "string.h"
 

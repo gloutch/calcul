@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "log.h"
 
 
 struct big_int * long_to_big(long l);

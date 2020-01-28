@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "config.h"
+#include "log.h"
 
 
 // create stack

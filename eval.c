@@ -32,7 +32,7 @@ static void eval_token(const struct parser_token exp_token, struct stack * opera
 	switch (exp_token.type) {
 
 		case NUM_OPERAND: {
-			struct number num = str_to_number(exp_token.len, exp_token.str);
+			struct number num = str_to_number(exp_token.len, exp_token.str, 10);
 			assert(num.type == INTEGER);
 			stack_push(operands, &num);
 			return;

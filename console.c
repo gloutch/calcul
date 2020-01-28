@@ -15,6 +15,7 @@ static void print_prompt() {
 
 static int check_leave_cmd(char const * const input) {
 	if (strncmp(input, CONSOLE_QUIT_WORD, strlen(CONSOLE_QUIT_WORD)) == 0) {
+		log_info("console leave command '" CONSOLE_QUIT_WORD "' found");
 		return 1;
 	}
 	return 0;
@@ -118,5 +119,6 @@ void console() {
 	}
 	print_leave_msg();
 	free(line);
+	LOG_FREE(line);
 }
 

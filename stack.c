@@ -14,7 +14,7 @@ struct stack * stack_malloc(int elem_size, int max_elem, stack_copy_elem copy) {
 
 	// store the stack on the heap {struct stack, [elem_size * max_elem]}
 	struct stack * s = malloc(sizeof(struct stack) + (elem_size * max_elem));
-	CHECK_MALLOC(s, "NULL malloc in stack_malloc\n");
+	CHECK_MALLOC(s, "stack_malloc (stack.c)");
 
 	// init the stack
 	s->elem_size = elem_size;
@@ -94,6 +94,7 @@ void stack_free(struct stack * s) {
 	s->start   = NULL;
 	s->current = NULL;
 	free(s);
+	LOG_FREE(s);
 }
 
 
@@ -162,7 +163,7 @@ void test_stack() {
 
 	stack_free(s);
 
-	printf("\ndone\n");
+	printf("\ndone\n\n");
 	#endif
 }
 

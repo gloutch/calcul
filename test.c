@@ -19,8 +19,14 @@ int main(int argc, char *argv[]) {
 	printf("COMPILE ERROR: test should NOT be compile with '-DNDEBUG'\n\n");
 	exit(1);
 	#else
+	log_set_quiet(0);
+	log_set_level(LOG_LEVEL);
 
-	printf("\nrun all tests\n\n");
+	static const char *level_names[] = {
+	  "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
+	};
+	printf("\nrun all tests  ** log level %s **\n\n", level_names[LOG_LEVEL]);
+
 
 	test_lexer();
 	test_parser();
@@ -29,7 +35,7 @@ int main(int argc, char *argv[]) {
 	test_big_int();
 	test_number();
 
-	#endif
+	#endif // NDEBUG
 
 	return 0;
 }

@@ -44,6 +44,7 @@ static void realloc_big_int(struct big_int ** big, int cap) {
 
 	struct big_int * new = realloc(*big, sizeof(struct big_int) + (sizeof(char) * cap));
 	CHECK_MALLOC(new, "realloc_big_int (big_int.c)");
+	log_debug("realloc %p -> %p", *big, new);
 
 	new->bin  = (unsigned char *) &new[1];
 	new->sign = sign;
@@ -134,6 +135,7 @@ struct big_int * str_to_big(int len, const char * str, unsigned int base) {
 
 	struct big_int * big = digit_to_big_int(len, digit, base);
 	free(digit);
+	LOG_FREE(digit);
 	return big;
 }
 
@@ -227,6 +229,7 @@ static void add_big(struct big_int * b1, const struct big_int * b2) {
 }
 
 struct big_int * big_int_add(struct big_int * b1, struct big_int * b2) {
+	log_info("big %p + %p = %p", b1, b2, b1);
 
 	// check sign
 	if ((b1->sign == POSITIVE) && (b2->sign == NEGATIVE)) {
@@ -298,6 +301,7 @@ static void sub_big(struct big_int * b1, const struct big_int * b2) {
 }
 
 struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2) {
+	log_info("big %p - %p = %p", b1, b2, b1);
 
 	// check sign
 	if (b2->sign == NEGATIVE) {
@@ -356,6 +360,7 @@ static void mul_big(struct big_int * b1, struct big_int * b2, struct big_int * s
 }
 
 struct big_int * big_int_mul(struct big_int * b1, struct big_int * b2) {
+	log_info("big %p * %p = %p", b1, b2, b1);;
 
 	// check zero
 	if (((b1->len == 1) && (b1->bin[0] == 0)) || // b1 == 0
@@ -406,6 +411,7 @@ void big_int_free(struct big_int * big) {
 	big->len = 0;
 	big->cap = 0;
 	free(big);
+	LOG_FREE(big);
 }
 
 
@@ -770,7 +776,7 @@ void test_big_int() {
 	big_int_free(rm12);
 
 
-	printf("done\n");
+	printf("done\n\n");
 	#endif
 }
 

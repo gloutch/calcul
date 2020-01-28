@@ -2,6 +2,7 @@
 #define EVAL_H
 
 #include <assert.h>
+#include "log.h"
 #include "number.h"
 #include "shunting_yard.h"
 #include "stack.h"

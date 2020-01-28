@@ -108,6 +108,7 @@ static void shunting_yard_wye(const struct parser_token * input, struct stack * 
 }
 
 struct stack * const shunting_yard(int n, const struct parser_token * token) {
+	log_trace("shunting_yard");
 
 	// oversized stacks
 	struct stack * output   = TOKEN_STACK(n);
@@ -154,6 +155,6 @@ void test_shunting_yard() {
 	#else
 	printf("SHUNTING YARD:\n");
 	// TODO
-	printf("done\n");
+	printf("done\n\n");
 	#endif
 }
