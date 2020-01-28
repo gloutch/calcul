@@ -2,6 +2,14 @@
 
 This project aimed to be a simple calculator with potentialy huge number.
 
+```bash
+Hi!
+Just type 'q' to leave the program
+
+>>> 123456789012345678901234567890 * (40 + 2)
+BIG_INT 0x41723c9e7c1102e718d657c674 
+```
+
 
 
 ## Flow explanations
