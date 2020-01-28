@@ -53,7 +53,6 @@ void print_parser_token(const struct parser_token * const token);
 void copy_parser_token(const struct parser_token * const src, struct parser_token * const dst);
 
 
-
 enum result_type {
 	CORRECT,		// everything turned great :D
 	ERR_SYM,		// lexer unknown symbol  

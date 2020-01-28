@@ -111,7 +111,7 @@ void console() {
 		}
 
 		struct number n = eval(exp);
-		print_number(&n);
+		number_print(&n);
 		free_parser_result(exp);
 		printf("\n\n");
 

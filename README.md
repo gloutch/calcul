@@ -18,11 +18,34 @@ Then a syntaxe transforamation (*check_syntax*) to a Reverse Polish Notation ([R
 
 The result is sent to something that evaluate the expression without error.
 
-
-
-## Restriction
+### Restriction
 
 For now, I reduce the math expression to a sentence with few operators (`+`, `*`), parenthesis and no function.
+
+
+
+## File by file
+
+This section justify the responsability of those independent module.
+
+- **big_int**
+- **console**
+
+- **eval**
+
+- **lexer**
+
+  Split an input string into an array of `lexer_token`. The lexicon is very small because it focuses on the abstraction on the string.
+
+- **number**
+
+- **parser**
+
+  Check the syntax of the expression based on the ...
+
+- **shunting_yard**
+
+- **stack**
 
 
 
@@ -52,9 +75,7 @@ Otherwise, I typed expression in the console to see if it works as I wanted. For
 12 + -(13.0 * +var_1 - max(-1, 2))
 ```
 
-
-
-## Clean
+### Clean
 
 Clean the whole project using run
 
@@ -87,8 +108,8 @@ make mrproper
 - [x] write a `test` target in makefile
 - [x] write a target with cflag `-DNDEBUG` to compile a realease
 - [x] Refactore `parser`, have a proper `shuning yard` module for instance
+- [x] `big_int_add` handle sign, as well as `big_int_mul`
 - [ ] `console` should catch interrupt
 - [ ] write test for `shunting_yard` and the whole `parser`
 - [ ] write **Add operator** section in readme
-- [ ] `add_big_int` handle sign, as well as `mult_big_int`
 

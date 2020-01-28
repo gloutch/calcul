@@ -26,8 +26,8 @@ int main(int argc, char *argv[]) {
 	test_parser();
 	test_stack();
 	test_shunting_yard();
-	test_number();
 	test_big_int();
+	test_number();
 
 	#endif
 

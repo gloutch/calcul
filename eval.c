@@ -72,7 +72,7 @@ struct number eval(struct parser_result exp) {
 	struct stack * stack_exp = shunting_yard(exp.size, exp.tarray);
 	// print_rpn_stack(stack_exp);
 	int size = stack_size(stack_exp);
-	struct stack * operands = stack_malloc(sizeof(struct number), size, (stack_copy_elem) copy_number);
+	struct stack * operands = stack_malloc(sizeof(struct number), size, (stack_copy_elem) number_copy);
 
 	while (!stack_empty(stack_exp)) {
 		struct parser_token exp_token;

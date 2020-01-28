@@ -7,31 +7,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "big_int.h"
 
-
-enum number_type {
-	INTEGER,
-	BIG_INT,
-	NAN,
-};
 
 struct number {
-	enum number_type type;
+	enum {
+		INTEGER,
+		BIG,
+		NAN,
+	} type;
+
 	union {
 		long integer;
+		struct big_int * big;
 	} data;
 };
 
-void print_number(const struct number * const num);
 
-void copy_number(const struct number * const src, struct number * const dst);
+struct number str_to_number(int len, const char * str, int base);
 
 
-struct number str_to_number(int len, const char * str);
+// n2 may be free after each operation, the result is in n1
+void number_neg(struct number * n1);
 
-struct number long_to_number(long l);
+void number_add(struct number * n1, struct number * n2);
+
+void number_sub(struct number * n1, struct number * n2);
+
+void number_mul(struct number * n1, struct number * n2);
+
+
+void number_print(const struct number * const num);
+
+void number_copy(const struct number * const src, struct number * const dst);
+
+void number_free(struct number num);
 
 
 void test_number();
 
-#endif // NUMBER_H
+#endif // NUMBER_H 
