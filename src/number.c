@@ -21,7 +21,7 @@ struct number str_to_number(int len, const char * str, int base) {
 	assert(str != NULL);
 
 	char * point = strchr(str, '.');
-	if (point != NULL) { // if there is a point
+	if ((point != NULL) && (point < str + len)) { // if there is a point
 		log_warn("sorry, no float yet (float %.*s -> int %.*s) ", len, str, point - str, str);
 		len = point - str; // for now NO FLOAT
 	}
@@ -144,13 +144,13 @@ void number_print(const struct number * const num) {
 
 		case INTEGER:
 			if (num->data.integer >= 0) {
-				printf("INTEGER %#lx ", num->data.integer);
+				printf("INTEGER %#lx = %ld", num->data.integer, num->data.integer);
 			} 
 			else if (num->data.integer == LONG_MIN) { // -LONG_MIN doesn't fit in a long
-				printf("INTEGER -0x8000000000000000 ");
+				printf("INTEGER -0x8000000000000000 = %ld", LONG_MIN);
 			} 
 			else {
-				printf("INTEGER -%#lx ", -num->data.integer);
+				printf("INTEGER -%#lx = %ld", -num->data.integer, num->data.integer);
 			}
 			return;
 
@@ -159,12 +159,7 @@ void number_print(const struct number * const num) {
 			big_int_print(num->data.big);
 			printf(" ");
 			return;
-
-		// case NAN:
-		// 	printf("NAN ");
-		// 	return;
 	}
-	assert(0);
 }
 
 void number_copy(const struct number * const src, struct number * const dst) {
@@ -172,7 +167,6 @@ void number_copy(const struct number * const src, struct number * const dst) {
 }
 
 void number_free(struct number num) {
-
 	if (num.type == BIG) {
 		big_int_free(num.data.big);
 	}

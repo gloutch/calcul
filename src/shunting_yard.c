@@ -1,15 +1,15 @@
 #include "shunting_yard.h"
 
-#define TOKEN_STACK(size) stack_malloc(sizeof(struct parser_token), size, (stack_copy_elem) copy_parser_token);
+#define TOKEN_STACK(size) stack_malloc(sizeof(struct token), size, (stack_copy_elem) token_copy);
 
 
 // < 0 means left associative
 //  0  means 
 // 0 < means right associative
-static int assoc(const struct parser_token * const token) {
-	switch (token->type) {
+static int assoc(const struct token * const t) {
+	switch (t->type) {
 
-		case MINUS:
+		case MINUS: // a - b - c = (a - b) - c
 			return -1;
 		case PLUS:
 		case ASTERISK:
@@ -17,7 +17,7 @@ static int assoc(const struct parser_token * const token) {
 		case RPARENT:
 			return 0;
 		case UNARY_PLUS:
-		case UNARY_MINUS:
+		case UNARY_MINUS: // --a = -(-a)
 			return 1;
 		default:
 			assert(0);
@@ -25,8 +25,8 @@ static int assoc(const struct parser_token * const token) {
 	}
 }
 
-static int preced(const struct parser_token * const token) {
-	switch (token->type) {
+static int preced(const struct token * const t) {
+	switch (t->type) {
 
 		case UNARY_PLUS:
 		case UNARY_MINUS:
@@ -47,7 +47,7 @@ static int preced(const struct parser_token * const token) {
 
 
 // let's assume the parenthesis are correct
-static void shunting_yard_wye(const struct parser_token * input, struct stack * operator, struct stack * output) {
+static void shunting_yard_wye(const struct token * input, struct stack * operator, struct stack * output) {
 
 	switch (input->type) {
 
@@ -62,8 +62,8 @@ static void shunting_yard_wye(const struct parser_token * input, struct stack * 
 			return;
 		}
 		case ARG_SEP: {		// ,
-			while (((struct parser_token *) stack_peek(operator))->type != LPARENT) {
-				struct parser_token tmp;
+			while (((struct token *) stack_peek(operator))->type != LPARENT) {
+				struct token tmp;
 				stack_pop(operator, &tmp);
 				stack_push(output, &tmp);
 			}
@@ -75,11 +75,11 @@ static void shunting_yard_wye(const struct parser_token * input, struct stack * 
 		case UNARY_PLUS:
 		case UNARY_MINUS: {
 			while (!stack_empty(operator)) {
-				struct parser_token * top = stack_peek(operator);
+				struct token * top = stack_peek(operator);
 				if ( !((preced(top) > preced(input)) || ((preced(top) == preced(input)) && (assoc(top) < 0))) ) {
 					break;
 				}
-				struct parser_token tmp;
+				struct token tmp;
 				stack_pop(operator, &tmp);
 				stack_push(output, &tmp);
 			}
@@ -87,28 +87,28 @@ static void shunting_yard_wye(const struct parser_token * input, struct stack * 
 			return;
 		}
 		case RPARENT: { 	// )
-			struct parser_token tmp;
+			struct token tmp;
 			stack_pop(operator, &tmp);
 			while (tmp.type != LPARENT) {
 				stack_push(output, &tmp);
 				stack_pop(operator, &tmp);
 			} // discard LPARENT
-			if ((stack_empty(operator) || (((struct parser_token *) stack_peek(operator))->type != FUNC_NAME))) {
+			if ((stack_empty(operator) || (((struct token *) stack_peek(operator))->type != FUNC_NAME))) {
 				return;
 			}
 			stack_pop(operator, &tmp);
 			stack_push(output, &tmp);
 			return;
 		}
-		case ERROR:
+		default:
 			return;
 	}
 	assert(0);
 	return;
 }
 
-struct stack * const shunting_yard(int n, const struct parser_token * token) {
-	log_trace("shunting_yard");
+struct stack * const shunting_yard(int n, const struct token * token) {
+	log_debug("Shunting_yard on %d token", n);
 
 	// oversized stacks
 	struct stack * output   = TOKEN_STACK(n);
@@ -119,7 +119,7 @@ struct stack * const shunting_yard(int n, const struct parser_token * token) {
 	}
 
 	while (!stack_empty(operator)) {
-		struct parser_token tmp;
+		struct token tmp;
 		stack_pop(operator, &tmp);
 		stack_push(output, &tmp);
 	}
@@ -128,12 +128,13 @@ struct stack * const shunting_yard(int n, const struct parser_token * token) {
 	// clear
 	stack_free(operator);
 	stack_reverse(output);
+	log_debug("Shunting_yard end, stack expression in %p", output);
 	return output;
 }
 
 
-static void print_rpn_stack_token(const struct parser_token * const token) {
-	print_parser_token(token);
+static void print_rpn_stack_token(const struct token * const t) {
+	token_print(t);
 	printf("\n");
 }
 

@@ -7,9 +7,12 @@
 #include <string.h>
 #include "config.h"
 #include "eval.h"
+#include "error.h"
+#include "lexer.h"
 #include "log.h"
 #include "number.h"
 #include "parser.h"
+#include "token.h"
 
 
 void console();

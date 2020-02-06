@@ -24,7 +24,7 @@ static const struct big_int BIG_ZERO = {(unsigned char *) zero_bin, 1, 1, POSITI
 static struct big_int * malloc_big_int(int cap) {
 
 	struct big_int * big = malloc(sizeof(struct big_int) + (sizeof(char) * cap));
-	CHECK_MALLOC(big, "malloc_big_int (big_int.c)");
+	CHECK_MALLOC(big, "malloc_big_int");
 
 	big->bin  = (unsigned char *) &big[1];
 	big->sign = POSITIVE;
@@ -43,7 +43,7 @@ static void realloc_big_int(struct big_int ** big, int cap) {
 	int len  = (*big)->len;
 
 	struct big_int * new = realloc(*big, sizeof(struct big_int) + (sizeof(char) * cap));
-	CHECK_MALLOC(new, "realloc_big_int (big_int.c)");
+	CHECK_MALLOC(new, "realloc_big_int");
 	log_debug("realloc %p -> %p", *big, new);
 
 	new->bin  = (unsigned char *) &new[1];

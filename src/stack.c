@@ -14,7 +14,7 @@ struct stack * stack_malloc(int elem_size, int max_elem, stack_copy_elem copy) {
 
 	// store the stack on the heap {struct stack, [elem_size * max_elem]}
 	struct stack * s = malloc(sizeof(struct stack) + (elem_size * max_elem));
-	CHECK_MALLOC(s, "stack_malloc (stack.c)");
+	CHECK_MALLOC(s, "stack_malloc");
 
 	// init the stack
 	s->elem_size = elem_size;

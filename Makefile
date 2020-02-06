@@ -13,43 +13,33 @@ endif
 EXEC=main
 TEST=test
 
-SRC=$(wildcard *.c)
-SRC_EXEC=$(filter-out test.c, $(SRC))
-SRC_TEST=$(filter-out main.c, $(SRC))
+SRC=$(wildcard src/*.c)
+SRC_EXEC=$(filter-out src/test.c, $(SRC))
+SRC_TEST=$(filter-out src/main.c, $(SRC))
 OBJ_EXEC=$(SRC_EXEC:.c=.o)
 OBJ_TEST=$(SRC_TEST:.c=.o)
 
 
-compile:$(EXEC)
+$(EXEC): $(OBJ_EXEC)
+	$(CC) $(CFLAGS) $^ -o $@
 
 run: $(EXEC)
-	./$(EXEC)
-
-rlwrap: $(EXEC) # just like `run` but with `rlwrap` as wrapper
 	rlwrap ./$(EXEC)
 
-$(EXEC): $(OBJ_EXEC)
+$(TEST): $(OBJ_TEST)
 	$(CC) $(CFLAGS) $^ -o $@
 
 tst: $(TEST)
 	./$(TEST)
 
-$(TEST): $(OBJ_TEST)
-	$(CC) $(CFLAGS) $^ -o $@
-
 %.o: %.c %.h config.h
 	$(CC) $(CFLAGS) -c $<
 	
 
-
-.PHONY: clean clear mrproper
+.PHONY: clean mrproper
 
 clean:
-	rm -rvf *.o
-
-clear: clean
-	@ clear
+	rm -rvf src/*.o
 
 mrproper: clean
 	rm -rvf $(EXEC) $(TEST)
-

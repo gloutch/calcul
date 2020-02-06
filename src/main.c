@@ -9,10 +9,12 @@ int main(int argc, char *argv[]) {
 
 	#ifdef NDEBUG // release
 	log_set_quiet(1);
-	#else // debug
+	#endif
+	
+	#ifdef LOG_LEVEL
 	log_set_quiet(0);
 	log_set_level(LOG_LEVEL);
-	#endif // NDEBUG
+	#endif
 
 	console();
 	

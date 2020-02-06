@@ -1,0 +1,33 @@
+{	
+	"working_dir": "$folder",
+	"shell_cmd": "make",
+
+	// result navigation
+	"file_regex": "^(..[^:\n]*):([0-9]+):?([0-9]+)?:? (.*)",
+	// colored clang output
+	"syntax" : "Packages/Makefile/Make Output.sublime-syntax",
+	
+	"variants": [
+		{
+			"name": "clean all",
+			"shell_cmd": "make mrproper",
+		},
+		{
+			"name": "test (log WARN)",
+			"shell_cmd": "make test LOG_LEVEL=LOG_WARN && ./test",
+		},
+		{
+			"name": "test (log INFO)",
+			"shell_cmd": "make test LOG_LEVEL=LOG_INFO && ./test",
+		},
+		{
+			"name": "test (log DEBUG)",
+			"shell_cmd": "make test LOG_LEVEL=LOG_DEBUG && ./test",
+		},
+		{
+			"name": "test (log TRACE)",
+			"shell_cmd": "make test LOG_LEVEL=LOG_TRACE && ./test",
+		},
+
+	]
+}
