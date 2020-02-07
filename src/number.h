@@ -24,7 +24,7 @@ struct number {
 };
 
 
-struct number str_to_number(int len, const char * str, int base);
+struct number str_to_number(int len, const char * str);
 
 
 // n2 may be free after each operation, the result is in n1

@@ -9,6 +9,7 @@ enum error_type {
 	NO_ERROR = 0,
 	// lexer
 	UNKNOWN_SYM,
+ 	WRONG_BASE,
 	// parser
 	UNKNOWN_TOK,
 	MIS_PARENT,

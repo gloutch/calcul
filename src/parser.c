@@ -313,7 +313,8 @@ void test_parser() {
 
 
 	printf(" convert_token\n");
-	struct expr lex2 = lexer("12 + -(13.0 * +var_1 - max(-1, 2)) §");
+	struct expr lex2 = lexer("12 + -(13.0 * +var_1 - max(-1, 2))");
+	assert(error_get() == NO_ERROR);
 	assert(lex2.len == 17);
 
 	int size2 = lex2.len;

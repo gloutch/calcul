@@ -69,14 +69,20 @@ static int try_name(const char * str, struct token * t) {
 	return 1;
 }
 
-static int try_number(const char * str, struct token * t) {
+/*
+	About NUMBER
+*/
 
-	if (!isdigit(str[0])) {
+// return 1 if `c` is a valid digit, 0 otherwise
+typedef int (* check_digit)(int c);
+
+static int eat_number(const char * str, check_digit digit, struct token * t) {
+	if (!digit(str[0])) {
 		return 0;
 	}
 
 	int i = 1;
-	while (isdigit(str[i])) { // integer part
+	while (digit(str[i])) { // integer part
 		i++;
 	}
 
@@ -86,9 +92,9 @@ static int try_number(const char * str, struct token * t) {
 		t->len  = i;
 		return 1;
 	}
-
 	i++; // skip the '.' index
-	while (isdigit(str[i])) { // decimal part
+	
+	while (digit(str[i])) { // decimal part
 		i++;
 	}
 
@@ -98,6 +104,56 @@ static int try_number(const char * str, struct token * t) {
 	return 1;
 }
 
+static int base = 0;
+
+static int isdigit_base(int c) {
+	if (isdigit(c)) {
+		if ((c - '0') < base) {
+			return 1;	
+		}
+		log_warn("Wrong digit base '%c' >= %d", c, base);
+	}
+	return 0;
+}
+
+static int try_number(const char * str, struct token * t) {
+
+	if (!isdigit(str[0])) {
+		return 0;
+	}
+	if (str[1] != 'x') { // no prefix, then assume it's a decimal number
+		return eat_number(str, isdigit, t);
+	}
+	
+	// retrieve the base of the prefix
+	base = str[0] - '0';
+	assert((0 <= base) && (base < 10));
+	const char * num_core = str + 2;
+
+	if (base == 0) { // hexadicimal
+		if (eat_number(num_core, isxdigit, t)) {
+			t->str = str;
+			t->len = t->len + 2;
+			log_debug("Find hex num '%.*s'", t->len, t->str);
+			return 1;
+		}
+		return 0;
+	}
+
+	eat_number(num_core, isdigit_base, t);
+	// check next char to see if it stops because of base
+	if (isxdigit(num_core[t->len])) {
+		error_set(WRONG_BASE, &str[2 + t->len], str, 2);
+		return 0;
+	}
+	t->str = str;
+	t->len = t->len + 2;
+	log_debug("Find base %d num '%.*s'", base, t->len, t->str);
+	return 1;
+}
+
+
+// get token from string
 static void next_token(const char * string, struct token * t) {
 
 	const char *str = eat_whitespace(string);
@@ -117,7 +173,9 @@ static void next_token(const char * string, struct token * t) {
 	}
 	// Assume the token is unknown
 	t->type = END;
-	error_set(UNKNOWN_SYM, str, NULL, 0);
+	if (!error_get()) {
+		error_set(UNKNOWN_SYM, str, NULL, 0);
+	}
 }
 
 
@@ -140,6 +198,9 @@ struct expr lexer(const char * string) {
 	error_reset();
 
 	int count = count_token(string);
+	if (error_get()) {
+		return token_expr(0);
+	}
 	log_debug("Lexer %d token found", count);
 	struct expr e = token_expr(count);
 
@@ -199,14 +260,6 @@ void test_lexer() {
 	assert(!try_name("1bc", &t1));
 
 
-	// printf(" number_has_prefix\n");
-	// assert(number_has_prefix("0x") == 16);
-	// assert(number_has_prefix("2x") == 2);
-	// assert(number_has_prefix("3x") == 3);
-	// assert(number_has_prefix("8x") == 8);
-	// assert(number_has_prefix("ax") == 0);
-
-
 	printf(" try_number\n");
 	struct token t2;
 
@@ -227,6 +280,23 @@ void test_lexer() {
 	assert(t2.len  == 6);
 
 	assert(!try_number(".123", &t2));
+
+	assert(try_number("0x1234A", &t2));
+	assert(t2.type == NUMBER);
+	assert(t2.len  == 7);
+
+	assert(try_number("2x010101", &t2));
+	assert(t2.type == NUMBER);
+	assert(t2.len  == 8);
+
+	assert(!try_number("2x020101", &t2));
+	assert(error_get() == WRONG_BASE);
+	error_reset();
+
+	assert(try_number("3x0201.01", &t2));
+	assert(error_get() == NO_ERROR);
+	assert(t2.type == NUMBER);
+	assert(t2.len  == 9);
 
 
 	printf(" next_token\n");
@@ -275,6 +345,7 @@ void test_lexer() {
 
 	printf(" count_token\n");
 	assert(count_token("1 2 3") == 3);
+	assert(error_get() == NO_ERROR);
 	assert(count_token("1 § 3") == 1); // stops at § UNKNONW
 	assert(error_get() == UNKNOWN_SYM);
 

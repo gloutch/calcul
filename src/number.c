@@ -17,30 +17,57 @@ static struct number long_to_number(long l) {
 	return num;
 }
 
-struct number str_to_number(int len, const char * str, int base) {
+static struct number str_to_number_base(int len, const char * str, int base) {
 	assert(str != NULL);
+	assert(len > 0);
+	assert(base >= 1);
+
+	log_debug("struct number from '%.*s' [base %d]", len, str, base);
 
 	char * point = strchr(str, '.');
 	if ((point != NULL) && (point < str + len)) { // if there is a point
-		log_warn("sorry, no float yet (float %.*s -> int %.*s) ", len, str, point - str, str);
+		log_warn("sorry, no float yet (float %.*s -> int %.*s) [base %d]", len, str, point - str, str, base);
 		len = point - str; // for now NO FLOAT
 	}
 
 	struct number num;
 
-	if (len < 19) { // fit in long integer
-		num.type = INTEGER;
-		num.data.integer = strtol(str, NULL, base);
-		if (!errno) {
-			log_info("int %ld ", num.data.integer);
-			return num;
-		}
-		log_warn("strtol failed on num %.*s (trying with big_int)", len, str);
+	if (base == 1) { // unary base
+		return long_to_number(len);
 	}
-	num.type = BIG;
+	assert(base >= 2);
+
+	// try to fit in an `long`
+	num.data.integer = strtol(str, NULL, base);
+	if (!errno) {
+		log_info("int %ld ", num.data.integer);
+		num.type = INTEGER;
+		return num;
+	} else {
+		int errsv = errno;
+		log_info("strtol() failed on num %.*s... [base %d] (%s), trying with str_to_big()", 10, str, base, strerror(errsv));
+		errno = 0;
+	}
+
+	// try in a `struct big_int`
 	num.data.big = str_to_big(len, str, base);
-	log_info("big %.*s = %p", len, str, num.data.big);
+	log_info("big %.*s = %p [base %d]", len, str, num.data.big, base);
+	num.type = BIG;
 	return num;
+}
+
+struct number str_to_number(int len, const char * str) {
+
+	if ((len >= 2) && (str[1] == 'x')) {
+		int base = str[0] - '0';
+		assert((0 <= base) && (base < 10));
+
+		if (base == 0) {
+			return str_to_number_base(len - 2, str + 2, 16);
+		}
+		return str_to_number_base(len - 2, str + 2, base); 
+	}
+	return str_to_number_base(len, str, 10);
 }
 
 
@@ -188,14 +215,24 @@ void test_number() {
 
 
 	printf(" str_to_number\n");
-	struct number sn1 = str_to_number(4, "1234", 10);
+	struct number sn1 = str_to_number(4, "1234");
 	assert(sn1.type == INTEGER);
 	assert(sn1.data.integer == 1234);
 	number_free(sn1);
 
-	struct number sn2 = str_to_number(20, "92233720368547175808", 10);
+	struct number sn2 = str_to_number(20, "92233720368547175808");
 	assert(sn2.type == BIG);
 	number_free(sn2);
+
+	struct number sn3 = str_to_number(10, "5x1231301");
+	assert(sn3.type == INTEGER);
+	assert(sn3.data.integer == 23951);
+	number_free(sn3);
+
+	struct number sn4 = str_to_number(18, "1x000000000000000");
+	assert(sn4.type == INTEGER);
+	assert(sn4.data.integer == 16);
+	number_free(sn4);
 
 
 	printf(" number_neg\n");
@@ -212,7 +249,7 @@ void test_number() {
 	ne = long_to_number(LONG_MIN); // -9223372036854775808
 	number_neg(&ne);
 	assert(ne.type == BIG);
-	struct number ne2 = str_to_number(19, "9223372036854775808", 10);
+	struct number ne2 = str_to_number(19, "9223372036854775808");
 	assert(ne2.type == BIG);
 	assert(big_int_cmp(ne.data.big, ne2.data.big) == 0);
 	number_free(ne2);
@@ -224,7 +261,7 @@ void test_number() {
 	struct number a2 = long_to_number((long) 10000000000000002);
 	assert(a1.type == INTEGER);
 	assert(a2.type == INTEGER);
-	struct number r12 = str_to_number(19, "9223372036854775809", 10);
+	struct number r12 = str_to_number(19, "9223372036854775809");
 	assert(r12.type == BIG);
 	number_add(&a1, &a2); // 9223372036854775809 > LONG_MAX + 2 -> overflow
 	assert(a1.type == BIG);

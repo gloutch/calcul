@@ -2,12 +2,15 @@
 
 This project aimed to be a simple calculator with potentialy huge number.
 
-```bash
+```C++
 Hi!
 Just type 'q' to leave the program
 
 >>> 123456789012345678901234567890 * (40 + 2)
-BIG_INT 0x41723c9e7c1102e718d657c674 
+BIG_INT 0x41723c9e7c1102e718d657c674
+
+>>> 2x10101 * 0x2
+INTEGER 0x2a = 42
 ```
 
 
@@ -32,12 +35,6 @@ Then, durring the evaluation, operand is converted to a `struct number` which **
 The result of the evaluation is simply a `struct number`.
 
 > Sorry about that, but for simplicity I print `bit_int` in **hexadecimal**. For now, I use [convzone](https://www.convzone.com/hex-to-decimal/) to come back in **decimal**
-
-### Restriction
-
-For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`), parenthesis and no function, neither variable.
-
-It's possible that the code doesn't work on big endian architecture (because of function like `add_big` in `big_int.c` for instance).
 
 ### File by file
 
@@ -114,3 +111,27 @@ Included executables with the command
 make mrproper
 ```
 
+
+
+## Restriction
+
+For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`), parenthesis and no function, neither variable.
+
+It's possible that the code doesn't work on big endian architecture (because of function like `add_big` in `big_int.c` for instance).
+
+
+
+## Number
+
+By default the numbers are in decimal, but it manages different bases.
+
+You can prefix number with the base using **one** decimal digit `[0-9]x`, like
+
+- `0x` hexadecimal
+- `2x` binary
+- `4x`quaternary
+- `5x`quinary
+- `8x` octal
+- ...
+
+ 

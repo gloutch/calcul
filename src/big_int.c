@@ -121,16 +121,24 @@ struct big_int * long_to_big(long l) {
 	return big;
 }
 
+static int char_to_digit(char c) {
+	if (isdigit(c)) {
+		return (c - '0');
+	}
+	assert(isalpha(c));
+	c = tolower(c);
+	return 10 + (c - 'a');
+}
+
 struct big_int * str_to_big(int len, const char * str, unsigned int base) {
 	assert(len  > 0);
 	assert(base > 1);
-	assert(base <= 10); // for now
 
 	unsigned char * digit = malloc(sizeof(unsigned char) * len);
 	CHECK_MALLOC(digit, "str_to_big (big_int.c)");
 
 	for (int i = 0; i < len; i++) {
-		digit[i] = str[len - i - 1] - '0'; // char to digit
+		digit[i] = char_to_digit(str[len - i - 1]);
 	}
 
 	struct big_int * big = digit_to_big_int(len, digit, base);
@@ -521,6 +529,9 @@ void test_big_int() {
 	assert(b7->bin[8] == 0x31);
 	// big_int_print(b7);
 	big_int_free(b7);
+
+	assert(char_to_digit('b') == 11);
+	assert(char_to_digit('d') == 13);
 
 
 	printf(" long_to_big\n");

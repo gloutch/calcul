@@ -20,7 +20,7 @@ static void eval_token(const struct token exp_token, struct stack * operands) {
 	switch (exp_token.type) {
 
 		case NUM_OPERAND: {
-			struct number num = str_to_number(exp_token.len, exp_token.str, 10);
+			struct number num = str_to_number(exp_token.len, exp_token.str);
 			stack_push(operands, &num);
 			return;
 		}
@@ -78,7 +78,7 @@ struct number eval(const struct expr e) {
 		if (error_get()) {
 			stack_free(stack_exp);
 			stack_free(operands);
-			return str_to_number(1, "0", 10); // why not
+			return str_to_number(1, "0"); // why not
 		}
 	}
 	assert(stack_empty(stack_exp));

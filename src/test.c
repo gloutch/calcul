@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	
 	#else
 	printf("\n\trun all tests  ** NO log **\n\n");
-	#endif
+	#endif // LOG_LEVEL
 
 
 	test_lexer();

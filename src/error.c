@@ -89,9 +89,14 @@ void error_message() {
 		case NO_ERROR:
 			printf("NO error has occured");
 			break;
+		// lexer
 		case UNKNOWN_SYM:
 			printf("Lexer: Unknown symbol '%.*s'", 1, err_data.character);
 			break;
+		case WRONG_BASE:
+			printf("Lexer: Number %c-based contains digit '%c' (wrong base)", *err_data.word, *err_data.character);
+			break;
+		// parser
 		case UNKNOWN_TOK:
 			printf("Parser: Unknown token '%.*s'", err_data.length, err_data.word);
 			break;
@@ -107,6 +112,7 @@ void error_message() {
 				printf(" in function '%.*s'", err_data.length, err_data.word);
 			}
 			break;
+		// eval
 		case UNMANAGED:
 			printf("Eval: Unmanaged feature `%.*s` (yet)", err_data.length, err_data.word);
 			break;
