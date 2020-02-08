@@ -17,45 +17,28 @@ INTEGER 0x2a = 42
 
 ## Flow explanations
 
-The `main.c` file calls a `console`, which ask for a **input line** and print the result or output the error message.
+The `main.c` file calls a `console`, which ask for a **input line** and print the result or the `error` message.
 
-> In `main` I also define the `log` verbosity thanks to the defined macros
+> In `main`, I also define the `log` verbosity thanks to the macros `RELEASE` and `LOG_LEVEL` 
 
-The input line is sent to the `lexer` which performs a **lexical** analysis (`lexer`).
+The input line is sent to the `lexer` which performs a **lexical** analysis.
 
-Then checks the parser converte the expression and check the **syntax** as much as possible to return a expressive error.
+Then, the parser convertes the expression and check the **syntax** as much as possible to return a expressive error.
 
-Next, the expression is sent to `eval` that first performs a **syntaxe transforamation** with `shunting_yard`, from an array of *token* to a `stack` ordered in Reverse Polish Notation ([RPN](https://en.wikipedia.org/wiki/Reverse_Polish_notation)).
+Next, the expression is sent to `eval` that first performs a **syntaxe transforamation** with `shunting_yard`, from an array of *token* to a `stack`ordered in Reverse Polish Notation ([RPN](https://en.wikipedia.org/wiki/Reverse_Polish_notation)).
 
 > The syntaxe transformation uses the [Shunting yard](https://en.wikipedia.org/wiki/Shunting-yard_algorithm) algorithm, with [unary operator](https://stackoverflow.com/questions/16425571/unary-minus-in-shunting-yard-expression-parser). Also, here is my source for [operator precedence](https://en.wikipedia.org/wiki/Order_of_operations#Programming_languages)
 >
 
-Then, durring the evaluation, operand is converted to a `struct number` which **stores the value** as a `long` or a `struct big_int` (the `struct big_int` should manage **operation** on huge size integers). That's the responsability of `struct number` to check overflow on `long` an switch to `struct big_int` when needed.
+Then, durring the evaluation, operands are converted to a `struct number` which **stores the value** as a `long` or a `struct big_int` (the `struct big_int` should manage **operation** on huge size integers). That's the responsability of `struct number` to check overflow on `long` an switch to `struct big_int` when needed.
 
 The result of the evaluation is simply a `struct number`.
-
-> Sorry about that, but for simplicity I print `bit_int` in **hexadecimal**. For now, I use [convzone](https://www.convzone.com/hex-to-decimal/) to come back in **decimal**
-
-### File by file
-
-This section justify the responsability of the independent modules.
-
-- **big_int:** manage huge integer operations.
-- **console:** manage input/output of the program.
-- **error:** centralize error management, show error and print text explanation
-- **eval:** try to evaluate an expression (no error management yet)
-- **lexer:** splits a string into an array of `lexer_token`. The lexicon is very small because it focuses on the abstraction on the string.
-- **number:** abstract the computed numbers. The numerical value is store in a `long` as long as possible, then convert into a `big_int` when needed.  
-- **parser:** splits an input string into an array of `parser_token` (based on `lexer`), and then checks the syntax as much as possible.
-- **shunting_yard:** changes an array of `parser_token` into a `stack`of *token* to process the expression (Reverse Polish Notation).
-- **stack:** abstract stack implementation
-- **token:** define `struct token` and an `struct expr` as list of *token*.
 
 
 
 ## Compile
 
-The classic `make` command compiles the `main` executable. To run it, try `./main`
+The classic `make` command compiles the `main` executable to run.
 
 > The makefile is the result of how I work on this project (I compile with clang-902.0.39.1)
 
@@ -93,19 +76,19 @@ among the values `LOG_TRACE`, `LOG_DEBUG`, `LOG_INFO`, `LOG_WARN`, `LOG_ERROR`, 
 
 > `LOG_TRACE` follows `malloc` and `free` 
 >
-> `LOG_DEBUG` follows some function and give debiging value
+> `LOG_DEBUG` follows some function and give debuging values
 >
 > `LOG_INFO` explicites operation
 
 ### Clean
 
-Clean the whole project using
+Clean the whole project (in `src/`) using
 
 ```bash
 make clean
 ```
 
-Included executables with the command
+Executables included (`main` and `test`) with the command
 
 ```bash
 make mrproper
@@ -115,23 +98,25 @@ make mrproper
 
 ## Restriction
 
-For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`), parenthesis and no function, neither variable.
+For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`), [numbers](#number), parenthesis and no function, neither variable.
 
-It's possible that the code doesn't work on big endian architecture (because of function like `add_big` in `big_int.c` for instance).
+That's possible that the code doesn't work on big endian architecture (because of function like `add_big` in `big_int.c` for instance).
 
 
 
 ## Number
 
-By default the numbers are in decimal, but it manages different bases.
+By default the numbers are in decimal, but it handles different bases.
 
-You can prefix number with the base using **one** decimal digit `[0-9]x`, like
+You can prefix number with the base using **one** decimal digit followed by **x** and then the **core** number
 
-- `0x` hexadecimal
-- `2x` binary
-- `4x`quaternary
-- `5x`quinary
-- `8x` octal
-- ...
+For instance, the number $14$ in different bases looks like: 
 
- 
+- hexadecimal        `0xe` or `0xE`
+- unary                    `1x00000000000000` (14 * '0')
+- binary                   `2x1110`
+- quaternary          `4x32`
+- quinary                `5x24`
+- octal                     `8x16`
+
+The hexadecimal is a special case, but the other bases should follow this regular expression: $$ \underbrace{ \texttt{[1-9]} }_\text{b} \texttt{ x } \underbrace{\texttt{[1-(}b-1)\texttt{]+}}_\text{int} \texttt{ .? } \underbrace{\texttt{[1-(}b-1)\texttt{]*}}_\text{float} $$
