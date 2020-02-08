@@ -46,7 +46,7 @@ The classic `make` command compiles the `main` executable to run.
 
 To compile a **release version** (without inner `assert` and `log`), just type
 
-```bash
+```makefile
 make RELEASE=yes
 ```
 
@@ -84,13 +84,13 @@ among the values `LOG_TRACE`, `LOG_DEBUG`, `LOG_INFO`, `LOG_WARN`, `LOG_ERROR`, 
 
 Clean the whole project (in `src/`) using
 
-```bash
+```makefile
 make clean
 ```
 
 Executables included (`main` and `test`) with the command
 
-```bash
+```makefile
 make mrproper
 ```
 
@@ -110,13 +110,14 @@ By default the numbers are in decimal, but it handles different bases.
 
 You can prefix number with the base using **one** decimal digit followed by **x** and then the **core** number
 
-For instance, the number $14$ in different bases looks like: 
+For instance, the number 14​ in different bases looks like: 
 
 - hexadecimal        `0xe` or `0xE`
-- unary                    `1x00000000000000` (14 * '0')
+- unary                    `1x00000000000000`
 - binary                   `2x1110`
 - quaternary          `4x32`
 - quinary                `5x24`
 - octal                     `8x16`
 
-The hexadecimal is a special case, but the other bases should follow this regular expression: $$ \underbrace{ \texttt{[1-9]} }_\text{b} \texttt{ x } \underbrace{\texttt{[1-(}b-1)\texttt{]+}}_\text{int} \texttt{ .? } \underbrace{\texttt{[1-(}b-1)\texttt{]*}}_\text{float} $$
+The hexadecimal is a special case, but the other bases should follow the regular expression, with `b` in [0, 9], `bx [1-(b-1)]+ .? [1-(b-1)]* `
+
