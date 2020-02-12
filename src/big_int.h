@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "limits.h"
 #include "log.h"
+#include "string.h"
 
 
 struct big_int * long_to_big(long l);
@@ -29,6 +31,13 @@ struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2);
 
 struct big_int * big_int_mul(struct big_int * b1, struct big_int * b2);
 
+struct big_int * big_int_sqr(struct big_int * b);
+
+struct big_int * big_int_pow(struct big_int * b, long expo);
+
+
+// return LONG_MIN if big_int can't fit in an long
+long big_to_long(const struct big_int * big);
 
 void big_int_print(const struct big_int * const big);
 

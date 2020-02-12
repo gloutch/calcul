@@ -10,6 +10,7 @@ static int assoc(const struct token * const t) {
 	switch (t->type) {
 
 		case MINUS: // a - b - c = (a - b) - c
+		case POW:
 			return -1;
 		case PLUS:
 		case ASTERISK:
@@ -31,11 +32,13 @@ static int preced(const struct token * const t) {
 		case UNARY_PLUS:
 		case UNARY_MINUS:
 			return 14;
+		case POW:
+			return 11;
 		case ASTERISK:
-			return 13;
+			return 10;
 		case PLUS:
 		case MINUS:
-			return 12;
+			return 9;
 		case LPARENT:
 		case RPARENT:
 			return 1;
@@ -72,6 +75,7 @@ static void shunting_yard_wye(const struct token * input, struct stack * operato
 		case PLUS:			// operator
 		case MINUS:
 		case ASTERISK:
+		case POW:
 		case UNARY_PLUS:
 		case UNARY_MINUS: {
 			while (!stack_empty(operator)) {

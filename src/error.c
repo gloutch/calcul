@@ -114,7 +114,19 @@ void error_message() {
 			break;
 		// eval
 		case UNMANAGED:
-			printf("Eval: Unmanaged feature `%.*s` (yet)", err_data.length, err_data.word);
+			printf("Eval: Unmanaged feature");
+			if (err_data.word != NULL) {
+				printf(" '%.*s' ", err_data.length, err_data.word);
+			} else if (err_data.character) {
+				printf(" '%c' ", *err_data.character);
+			}
+			printf("(yet)");
+			break;
+		case POW_BIG:
+			printf("Eval: exponent too big, it must fit in a long integer");
+			break;
+		case POW_NEG:
+			printf("Eval: negative exponent isn't allowed");
 			break;
 	}
 }

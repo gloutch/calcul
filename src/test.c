@@ -32,12 +32,12 @@ int main(int argc, char *argv[]) {
 	#endif // LOG_LEVEL
 
 
-	test_lexer();
-	test_parser();
-	test_stack();
-	test_shunting_yard();
+	// test_lexer();
+	// test_parser();
+	// test_stack();
+	// test_shunting_yard();
 	test_big_int();
-	test_number();
+	// test_number();
 
 	#endif // NDEBUG
 

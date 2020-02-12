@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "big_int.h"
+#include "error.h"
+#include "limits.h"
 #include "log.h"
 
 
@@ -35,6 +37,8 @@ void number_add(struct number * n1, struct number * n2);
 void number_sub(struct number * n1, struct number * n2);
 
 void number_mul(struct number * n1, struct number * n2);
+
+void number_pow(struct number * n1, struct number * n2);
 
 
 void number_print(const struct number * const num);

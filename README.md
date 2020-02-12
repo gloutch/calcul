@@ -5,12 +5,12 @@ This project aimed to be a simple calculator with potentialy huge number.
 ```C++
 Hi!
 Just type 'q' to leave the program
-
+  
 >>> 123456789012345678901234567890 * (40 + 2)
-BIG_INT 0x41723c9e7c1102e718d657c674
+BIG 0x41723c9e7c1102e718d657c674
 
 >>> 2x10101 * 0x2
-INTEGER 0x2a = 42
+INT 0x2a = 42
 ```
 
 
@@ -119,5 +119,53 @@ For instance, the number 14​ in different bases looks like:
 - quinary                `5x24`
 - octal                     `8x16`
 
-The hexadecimal is a special case, but the other bases should follow the regular expression, with `b` in [0, 9], `bx [1-(b-1)]+ .? [1-(b-1)]* `
+The hexadecimal is a special case, but the other bases should follow the regular expression, with `b` in [1, 9], `bx [1-(b-1)]+ .? [1-(b-1)]* `
+
+
+
+## Add an operator
+
+Here are all the changes I made to add the operator `^` (exponentiation). I think knowing how to add a operation should help to understand the sources.
+
+1. `lexer.c` should recognize the charactere `'^'` as a `SYMBOL`, so I add it in the function `try_symbol`
+
+2. add the new operator `POW` in the `enum token_type`. 
+
+   ```C
+   enum token_type {
+   	POW
+   };
+   ```
+   and add the `case` in `print_token` for convenience.
+
+3. Then in `parser.c`, first implement the convertion between the symbol to the effective operator for `lexer_to_perser`, it's in `convert_token`
+
+   ```c
+   case SYMBOL:
+   			if (strncmp(token.str, "^", token.len) == 0) {
+   				return POW;
+   			}
+   ```
+
+   Second, for `parser_check_syntax` add the token in the `BINARY` macro
+
+   ```c
+   #define BINARY(op)   ( .... || ((op) == POW))
+   ```
+
+4. In `shunting_yard.c` set it in `preced`, `assoc` and the `case` in `shunting_yard_wye`. 
+
+5. Finally in `eval.c`, in `eval_token` again add the `case POW`.
+
+   ```C
+   case POW: {
+   			struct number res = binary_op(operands, number_pow);
+   			stack_push(operands, &res);
+   			....
+   		}
+   ```
+
+   Where `number_pow` is an implementation of the operation on two `struct number`.
+
+
 

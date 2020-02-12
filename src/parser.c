@@ -1,7 +1,7 @@
 #include "parser.h"
 
 #define OPERAND(to)  (((to) == NUM_OPERAND) || ((to) == VAR_OPERAND))
-#define BINARY(op)   (((op) == PLUS)        || ((op) == MINUS)       || ((op) == ASTERISK))
+#define BINARY(op)   (((op) == PLUS)        || ((op) == MINUS)       || ((op) == ASTERISK) || ((op) == POW))
 #define UNARY(op)    (((op) == UNARY_PLUS)  || ((op) == UNARY_MINUS))
 
 
@@ -40,6 +40,9 @@ static enum token_type convert_token(int i, int n, const struct token * t) {
 			}
 			if (strncmp(token.str, "*", token.len) == 0) {
 				return ASTERISK;
+			}
+			if (strncmp(token.str, "^", token.len) == 0) {
+				return POW;
 			}
 			return UNKNOWN;
 		}
@@ -144,16 +147,13 @@ static int check_parenthesis(int n, const struct token * list) {
 // check if the next token is correct thanks to the current one
 static int correct_next_token(enum token_type curr, enum token_type next) {
 
+	if (BINARY(curr) || UNARY(curr)) { // operator (unary and binary)
+		return (OPERAND(next) || UNARY(next) || (next == LPARENT) || (next == FUNC_NAME));
+	}
+	if (OPERAND(curr)) {
+		return (BINARY(next) || (next == RPARENT) || (next == ARG_SEP));
+	}
 	switch (curr) {
-		case PLUS: 			// operator (unary and binary)
-		case MINUS:
-		case ASTERISK:
-		case UNARY_PLUS:
-		case UNARY_MINUS:
-			return (OPERAND(next) || UNARY(next) || (next == LPARENT) || (next == FUNC_NAME));
-		case NUM_OPERAND: 	// operand
-		case VAR_OPERAND:
-			return (BINARY(next) || (next == RPARENT) || (next == ARG_SEP));
 		case LPARENT:
 			return (OPERAND(next) || UNARY(next) || (next == FUNC_NAME) || (next == LPARENT) || (next == RPARENT));
 		case RPARENT:

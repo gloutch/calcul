@@ -26,11 +26,11 @@ static void eval_token(const struct token exp_token, struct stack * operands) {
 		}
 
 		case VAR_OPERAND:
-			log_error("Unknown variable '%.*s' (no variable yet)", exp_token.len, exp_token.str);
+			// log_error("Unknown variable '%.*s' (no variable yet)", exp_token.len, exp_token.str);
 			error_set(UNMANAGED, NULL, exp_token.str, exp_token.len);
 			return;
 		case FUNC_NAME:
-			log_error("Unknown function '%.*s' (no function yet) ", exp_token.len, exp_token.str);
+			// log_error("Unknown function '%.*s' (no function yet) ", exp_token.len, exp_token.str);
 			error_set(UNMANAGED, NULL, exp_token.str, exp_token.len);
 			return;
 
@@ -47,6 +47,14 @@ static void eval_token(const struct token exp_token, struct stack * operands) {
 		case ASTERISK: {
 			struct number res = binary_op(operands, number_mul);
 			stack_push(operands, &res);
+			return;
+		}
+		case POW: {
+			struct number res = binary_op(operands, number_pow);
+			stack_push(operands, &res);
+			if (error_get()) {
+				error_set(error_get(), exp_token.str, NULL, 0); // cursor on the operator
+			}
 			return;
 		}
 

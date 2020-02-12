@@ -17,6 +17,8 @@ enum error_type {
 	MIS_ARG_SEP,
 	// eval
 	UNMANAGED,
+	POW_BIG,
+	POW_NEG,
 };
 
 

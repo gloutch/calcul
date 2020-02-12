@@ -38,11 +38,9 @@ static int try_symbol(const char * str, struct token * t) {
 
 	switch (str[0]) {
 		case '+':
-		case '*':
 		case '-':
-		case '/':
-		case '|':
-		case '&':
+		case '*':
+		case '^':
 			t->type = SYMBOL;
 			break;
 		default:

@@ -37,19 +37,22 @@ static struct big_int * malloc_big_int(int cap) {
 
 static void realloc_big_int(struct big_int ** big, int cap) {
 	assert((*big)->cap < cap);
-	// printf("bit int: realloc\n");
 
-	int sign = (*big)->sign;
-	int len  = (*big)->len;
+	struct big_int save = **big;
+	unsigned char b1 = save.bin[0];
 
 	struct big_int * new = realloc(*big, sizeof(struct big_int) + (sizeof(char) * cap));
 	CHECK_MALLOC(new, "realloc_big_int");
-	log_debug("realloc %p -> %p", *big, new);
 
-	new->bin  = (unsigned char *) &new[1];
-	new->sign = sign;
-	new->len  = len;
+	new->bin  = (unsigned char *) &new[1]; // 0x10000000000000000 * 2
+	new->sign = save.sign;
+	new->len  = save.len;
 	new->cap  = cap;
+
+	log_debug("big realloc @%p [%d] bin %p --> @%p [%d] bin %p", *big, save.cap, save.bin, new, new->cap, new->bin);
+
+	unsigned char b2 = new->bin[0];
+	assert(b1 == b2); // test the same first digit
 
 	*big = new; 
 }
@@ -118,6 +121,7 @@ struct big_int * long_to_big(long l) {
 	} while (num);
 	big->len = i;
 
+	log_info("long %ld to big @%p", l, big);
 	return big;
 }
 
@@ -135,7 +139,7 @@ struct big_int * str_to_big(int len, const char * str, unsigned int base) {
 	assert(base > 1);
 
 	unsigned char * digit = malloc(sizeof(unsigned char) * len);
-	CHECK_MALLOC(digit, "str_to_big (big_int.c)");
+	CHECK_MALLOC(digit, "str_to_big");
 
 	for (int i = 0; i < len; i++) {
 		digit[i] = char_to_digit(str[len - i - 1]);
@@ -154,7 +158,9 @@ void big_int_neg(struct big_int * b) {
 	b->sign = (b->sign == POSITIVE ? NEGATIVE : POSITIVE);
 }
 
-void big_int_swap(struct big_int * b1, struct big_int * b2) {	
+// TODO redo, problem with ->bin
+void big_int_swap(struct big_int * b1, struct big_int * b2) {
+	log_info("big swap @%p <-> @%p", b1, b2);	
 	struct big_int tmp = *b2;
 	*b2 = *b1;
 	*b1 = tmp;
@@ -198,8 +204,9 @@ int big_int_cmp(const struct big_int * b1, const struct big_int * b2) {
 
 
 
-// assume b1 is long enough to store the result
 static void add_big(struct big_int * b1, const struct big_int * b2) {
+	log_info("big @%p + @%p = @%p", b1, b2, b1);
+	assert(b1->cap >= (b1->len > b2->len ? b1->len : b2->len) + 1);
 
 	const struct big_int * i1; // shorter
 	const struct big_int * i2; // longer
@@ -238,8 +245,6 @@ static void add_big(struct big_int * b1, const struct big_int * b2) {
 }
 
 struct big_int * big_int_add(struct big_int * b1, struct big_int * b2) {
-	log_info("big %p + %p = %p", b1, b2, b1);
-
 	// check sign
 	if ((b1->sign == POSITIVE) && (b2->sign == NEGATIVE)) {
 		b2->sign = POSITIVE;
@@ -268,9 +273,10 @@ struct big_int * big_int_add(struct big_int * b1, struct big_int * b2) {
 }
 
 
-// assume b1 is long enough to store the result, and b1 > b2
 static void sub_big(struct big_int * b1, const struct big_int * b2) {
+	log_info("big @%p - #%p = @%p", b1, b2, b1);
 	assert(big_int_cmp_bin(b1, b2) > 0);
+	assert(b1->cap >= b1->len);
 
 	unsigned short rem = 0;
 	int i   = 0;
@@ -310,8 +316,6 @@ static void sub_big(struct big_int * b1, const struct big_int * b2) {
 }
 
 struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2) {
-	log_info("big %p - %p = %p", b1, b2, b1);
-
 	// check sign
 	if (b2->sign == NEGATIVE) {
 		b2->sign = POSITIVE;
@@ -347,62 +351,196 @@ struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2) {
 }
 
 
-// b1 is long enough, b2 and sum may be free after
-static void mul_big(struct big_int * b1, struct big_int * b2, struct big_int * sum) {
-	assert(big_int_cmp(sum, &BIG_ZERO) == 0);
+static void mul_big(struct big_int * b1, const struct big_int * b2) {
+	log_info("big @%p * @%p = @%p", b1, b2, b1);
+	// printf("b1->len %d cap %d, b2->len %d cap %d\n", b1->len, b1->cap, b2->len, b2->cap);
+	assert(b1 != b2);
+	assert(b1->len <= b2->len); 		// b2 is the longer
+	assert(b1->cap >= 2 * b2->len); 	// b1 is long enough
 
-	while ((b2->len != 1) || (b2->bin[0] != 1)) { // b2 != 1
+	memcpy(&(b1->bin[b2->len]), b1->bin, b1->len);
+	memset(&(b1->bin[b2->len + b1->len]), 0, (b2->len - b1->len));
 
-		if (b2->bin[0] % 2) { // b2 is odd
-			sub_big(b2, &BIG_ONE);
-			add_big(sum, b1);
-			b2->len = digit_div_2(b2->len, b2->bin, BASE);
-			add_big(b1, b1);
+	int w = 0;
+	long rem = 0;
+	int len = b2->len;
+
+	for (int i = 0; i < len; i++) {
+		for (int j = i; j >= 0; j--) {
+			// printf("%d, %d\n", j, len + i - j);
+			rem += b2->bin[j] * b1->bin[len + i - j];
 		}
-		else { // b2 is even
-			b2->len = digit_div_2(b2->len, b2->bin, BASE);
-			add_big(b1, b1);
-		}
+		b1->bin[w++] = rem % BASE;
+		rem /= BASE;
 	}
-	assert((b2->len == 1) && (b2->bin[0] == 1));
-	add_big(b1, sum);
+	log_debug("big_int_sqr monitor long rem = %ld >= 0", rem);
+	assert(rem >= 0);
+	for (int i = 1; i < b1->len; i++) {
+		for (int j = i; j < len; j++) {
+			// printf("%d, %d\n", j, 2 * len - j + i - 1);
+			rem += b2->bin[j] * b1->bin[2 * len - j + i - 1];
+		}
+		b1->bin[w++] = rem % BASE;
+		rem /= BASE;
+	}
+	assert((0 <= rem) && (rem < BASE));
+	if (rem > 0) {
+		b1->bin[w++] = rem;
+	}
+	b1->len = w;
 }
 
 struct big_int * big_int_mul(struct big_int * b1, struct big_int * b2) {
-	log_info("big %p * %p = %p", b1, b2, b1);;
+	assert(b1 != b2);
 
 	// check zero
-	if (((b1->len == 1) && (b1->bin[0] == 0)) || // b1 == 0
-		((b2->len == 1) && (b2->bin[0] == 0))) { // b2 == 0
+	if (((b1->len == 1) && (b1->bin[0] == 0)) || // b1 == 0 or b2 == 0
+		((b2->len == 1) && (b2->bin[0] == 0))) {
 		b1->sign   = POSITIVE;
 		b1->len    = 1;
 		b1->bin[0] = 0;
 		return b1;
 	}
 
-	// quickly find the longer
-	if (b1->len < b2->len) {
+	// check capacity
+	if (b1->len > b2->len) {
 		big_int_swap(b1, b2);
-	} 
-	struct big_int * result = b1;
-	result->sign = (b1->sign == b2->sign ? POSITIVE : NEGATIVE);
-	
-	// check capacity, the result should be store in a (b1->len + b2->len) long integer
-	int max_size = b1->len + b2->len;
-	if (result->cap <= max_size) {
-		realloc_big_int(&result, max_size * 2);
 	}
-	assert(result->cap > max_size);
 
-	// operation
-	struct big_int * zero = malloc_big_int(max_size);
-	assert(b2->len <= result->len);
-	mul_big(result, b2, zero);
-	big_int_free(zero);
-	return result;
+	assert(b1->len <= b2->len);
+	if (b1->cap < 2 * b2->len) {
+		realloc_big_int(&b1, 2 * b2->len);
+	}
+	assert(b1->cap >= 2 * b2->len);
+
+	// check sign
+	b1->sign = (b1->sign == b2->sign ? POSITIVE : NEGATIVE);
+
+	mul_big(b1, b2);
+	return b1;
 }
 
 
+
+struct big_int * big_int_sqr(struct big_int * b) {
+	// set sign
+	b->sign = POSITIVE;
+
+	// check capacity
+	int len = b->len;
+	if (b->cap < len * 2) {
+		realloc_big_int(&b, b->cap * 2);
+	}
+	log_info("big square @%p", b);
+	assert(b->cap >= len * 2);
+
+	// shitf the number on the second half of bin
+	memcpy(&(b->bin[len]), b->bin, b->len);
+	int w = 0;   			// where to write the result
+	int l = len; 			// lower cursor on the tmp num
+	int u = l + len - 1; 	// upper cursor
+	long rem = 0; 			// hoping a long is enough
+
+	for (int i = 0; i < len; i++) {
+		for (int j = 0; j <= i; j++) {
+			// printf("%d, %d\n", l + j, l + i - j); // debug
+			rem += b->bin[l + j] * b->bin[l + i - j];
+		}
+		b->bin[w++] = rem % BASE;
+		rem = rem / BASE;
+	}
+	log_debug("big_int_sqr monitor long rem = %ld >= 0", rem);
+	assert(rem >= 0);
+	for (int i = len - 2; i >= 0; i--) {
+		for (int j = 0; j <= i; j++) {
+			// printf("%d, %d\n", u - i + j, u - j); // debug
+			rem += b->bin[u - i + j] * b->bin[u - j];
+		}
+		b->bin[w++] = rem % BASE;
+		rem = rem / BASE;
+	}
+	assert((0 <= rem) && (rem < BASE));
+	if (rem > 0) {
+		b->bin[w++] = rem;
+	}
+	b->len = w;
+	return b;
+}
+
+struct big_int * big_int_pow(struct big_int * b, long expo) {
+	log_info("big @%p ^ %ld", b, expo);
+	assert(expo >= 0);
+
+	// check special value of expo
+	if (expo == 0) {
+		b->len = 1;
+		b->bin[0] = 1;
+		b->sign = POSITIVE;
+		return b;
+	}
+	if (expo == 1) {
+		return b;
+	}
+	if (expo == 2) {
+		return big_int_sqr(b);
+	}
+
+	struct big_int * prod = malloc_big_int(b->cap * 2);
+	prod->bin[0] = 1;
+
+	while (expo != 1) {
+		log_debug("big expo, b @%p, prod @%p, expo %ld", b, prod, expo);
+
+		if (expo % 2) { // odd
+			expo -= 1;
+			assert(prod->len <= b->len);
+			if (prod->cap < 2 * b->len) {
+				realloc_big_int(&prod, 2 * b->len);
+			}
+			mul_big(prod, b);
+			expo /= 2;
+			b = big_int_sqr(b);
+		} 
+		else { // even
+			expo /= 2;
+			b = big_int_sqr(b);
+		}
+	}
+
+	assert(expo == 1);
+	assert(prod->len <= b->len);
+	if (prod->cap < 2 * b->len) {
+		realloc_big_int(&prod, 2 * b->len);
+	}
+	mul_big(prod, b);
+	big_int_free(b);
+	log_info("big expo in @%p", prod);
+	return prod;
+}
+
+
+
+// return LONG_MIN if big_int can't fit in an long
+long big_to_long(const struct big_int * big) {
+	log_debug("trying to convert big %p [%d bytes] in long", big, big->len);
+
+	if (big->len > sizeof(unsigned long)) {
+		return LONG_MIN;
+	}
+	// fit in a long
+	unsigned long ures = 0;
+	memcpy((char *) &ures, (const char *) big->bin, big->len);
+	if (ures == 0) { // LONG_MIN is 0 in a unsinged long
+		return LONG_MIN;
+	}
+	if (ures > (unsigned long) LONG_MAX) {
+		return LONG_MIN;
+	}
+
+	long res = (big->sign == POSITIVE ? (long) ures : -(long) ures);
+	log_info("big %p == (long %ld)", big, res);
+	return res;
+}
 
 void big_int_print(const struct big_int * const big) {
 	if (big->sign == NEGATIVE) {
@@ -764,6 +902,7 @@ void test_big_int() {
 	struct big_int * m2 = long_to_big(223776);
 	struct big_int * rm12 = long_to_big(-5 * 223776);
 	assert(big_int_mul(m1, m2) == m1);
+	// big_int_print(m1);
 	assert(big_int_cmp(m1, rm12) == 0);
 	big_int_free(m1);
 	big_int_free(m2);
@@ -787,6 +926,112 @@ void test_big_int() {
 	big_int_free(m2);
 	big_int_free(rm12);
 
+	m1 = str_to_big(17, "10000000000000000", 16);
+	m2 = long_to_big(2);
+	struct big_int * m12 = big_int_mul(m1, m2);
+	// big_int_print(m12);
+	big_int_free(m2);
+	big_int_free(m12);
+
+
+	printf(" big_to_long\n");
+	long l1 = (long) 1527261;
+	struct big_int * p1 = long_to_big(l1);
+	long cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	l1 = (long) 0x10000000000;
+	p1 = long_to_big(l1);
+	cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	l1 = (long) -1527261;
+	p1 = long_to_big(l1);
+	cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	l1 = (long) LONG_MAX;
+	p1 = long_to_big(l1);
+	cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	l1 = - (long) LONG_MAX;
+	p1 = long_to_big(l1);
+	cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	l1 = (long) LONG_MIN;
+	p1 = long_to_big(l1);
+	cvt1 = big_to_long(p1);
+	assert(l1 == cvt1);
+	big_int_free(p1);
+
+	p1 = str_to_big(20, "18446744073709551615", 10); // doesn't fit in long
+	cvt1 = big_to_long(p1);
+	assert(cvt1 == LONG_MIN);
+	big_int_free(p1);
+
+
+	printf(" big_int_sqr\n");
+	long s = 256;
+	struct big_int * bsqr = big_int_sqr(long_to_big(s));
+	long sqr = big_to_long(bsqr);
+	assert(sqr == s * s);
+	big_int_free(bsqr);
+
+	s = 3333333;
+	bsqr = big_int_sqr(long_to_big(s));
+	sqr = big_to_long(bsqr);
+	assert(sqr == s * s);
+	big_int_free(bsqr);
+
+	s = -1808780;
+	bsqr = big_int_sqr(long_to_big(s));
+	sqr = big_to_long(bsqr);
+	assert(sqr == s * s);
+	big_int_free(bsqr);
+
+
+	printf(" big_int_pow\n");
+	struct big_int * pow = long_to_big(3);
+	long pow_res = big_to_long(big_int_pow(pow, 0));
+	assert(pow_res == 1);
+	big_int_free(pow);
+
+	pow = long_to_big(3);
+	pow_res = big_to_long(big_int_pow(pow, 1));
+	assert(pow_res == 3);
+	big_int_free(pow);
+
+	pow = long_to_big(3);
+	pow_res = big_to_long(big_int_pow(pow, 2));
+	assert(pow_res == 9);
+	big_int_free(pow);
+
+	pow = long_to_big(3);
+	pow = big_int_pow(pow, 3);
+	pow_res = big_to_long(pow);
+	assert(pow_res == 27);
+	big_int_free(pow);
+
+	pow = long_to_big(2);
+	pow = big_int_pow(pow, 56);
+	pow_res = big_to_long(pow);
+	assert(pow_res == (long) 72057594037927936);
+	big_int_free(pow);
+
+	pow = long_to_big(3);
+	pow = big_int_pow(pow, 300);
+	pow_res = big_to_long(pow);
+	assert(pow_res == LONG_MIN); // pow_res doesn't fit in long
+	big_int_print(pow);
+	printf(" = 3 ^ 300\n");
+	big_int_free(pow);
 
 	printf("done\n\n");
 	#endif

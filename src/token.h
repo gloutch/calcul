@@ -22,6 +22,7 @@ enum token_type {
 	PLUS, // binary operator
 	MINUS,
 	ASTERISK,
+	POW,
 	UNARY_PLUS, // unary operator
 	UNARY_MINUS,
 	UNKNOWN,

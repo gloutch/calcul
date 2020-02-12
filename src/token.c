@@ -26,6 +26,7 @@ void token_print(const struct token * const t) {
 		case PLUS:
 		case MINUS:
 		case ASTERISK:
+		case POW:
 			printf("BINARY OP %.*s", t->len, t->str);
 			return;
 		case UNARY_PLUS:

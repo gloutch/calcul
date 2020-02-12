@@ -7,7 +7,7 @@ static void integer_to_big(struct number * num) {
 	long tmp_log = num->data.integer;
 	num->type = BIG;
 	num->data.big = long_to_big(num->data.integer);
-	log_info("int %ld -> big_int ptr %p", tmp_log, num->data.big);
+	log_info("int %ld -> big_int @%p", tmp_log, num->data.big);
 }
 
 static struct number long_to_number(long l) {
@@ -45,13 +45,13 @@ static struct number str_to_number_base(int len, const char * str, int base) {
 		return num;
 	} else {
 		int errsv = errno;
-		log_info("strtol() failed on num %.*s... [base %d] (%s), trying with str_to_big()", 10, str, base, strerror(errsv));
+		log_info("strtol() failed with str '%.*s...' [base %d] (%s), trying with str_to_big()", 11, str, base, strerror(errsv));
 		errno = 0;
 	}
 
 	// try in a `struct big_int`
 	num.data.big = str_to_big(len, str, base);
-	log_info("big %.*s = %p [base %d]", len, str, num.data.big, base);
+	log_info("big '%.*s' [base %d] = @%p", len, str, base, num.data.big);
 	num.type = BIG;
 	return num;
 }
@@ -117,7 +117,7 @@ void number_add(struct number * n1, struct number * n2) {
 
 	long res = 0;
 	if (__builtin_saddl_overflow(n1->data.integer, n2->data.integer, &res)) { // overflow has occurred
-		log_info("prevent overflow");
+		log_info("add prevent overflow");
 		convert_to_big_op(n1, n2, big_int_add);
 		return;
 	}
@@ -136,7 +136,7 @@ void number_sub(struct number * n1, struct number * n2) {
 
 	long res = 0;
 	if (__builtin_ssubl_overflow(n1->data.integer, n2->data.integer, &res)) { // overflow has occurred
-		log_info("prevent overflow");
+		log_info("sub prevent overflow");
 		convert_to_big_op(n1, n2, big_int_sub);
 		return;
 	}
@@ -155,7 +155,7 @@ void number_mul(struct number * n1, struct number * n2) {
 
 	long res = 0;
 	if (__builtin_smull_overflow(n1->data.integer, n2->data.integer, &res)) { // overflow has occurred
-		log_info("prevent overflow");
+		log_info("mult prevent overflow");
 		convert_to_big_op(n1, n2, big_int_mul);
 		return;
 	}
@@ -163,30 +163,62 @@ void number_mul(struct number * n1, struct number * n2) {
 	n1->data.integer = res;
 }
 
+void number_pow(struct number * n1, struct number * n2) {
 
+	long expo;
+	if (n2->type == BIG) { // exponent shouldn't be a big_int
+		// try to convert is in a long
+		expo = big_to_long(n2->data.big);
+		if (expo == LONG_MIN) { // convertion failed
+			error_set(POW_BIG, NULL, NULL, 0);
+			return;
+		}
+	} 
+	else {
+		expo = n2->data.integer;
+	}
+	if (expo < 0) {
+		error_set(POW_NEG, NULL, NULL, 0);
+		return;
+	}
+
+	assert(expo >= 0);
+	if (n1->type == INTEGER) {
+		integer_to_big(n1);
+	}
+	n1->data.big = big_int_pow(n1->data.big, expo);
+}
+
+
+
+static void number_print_long(long num) {
+	if (num >= 0) {
+		printf("INT %#lx = %ld", num, num);
+	} 
+	else if (num == LONG_MIN) { // -LONG_MIN doesn't fit in a long
+		printf("INT -0x8000000000000000 = %ld", LONG_MIN);
+	} 
+	else {
+		printf("INT -%#lx = %ld", -num, num);
+	}
+	return;
+}
 
 void number_print(const struct number * const num) {
 
-	switch (num->type) {
-
-		case INTEGER:
-			if (num->data.integer >= 0) {
-				printf("INTEGER %#lx = %ld", num->data.integer, num->data.integer);
-			} 
-			else if (num->data.integer == LONG_MIN) { // -LONG_MIN doesn't fit in a long
-				printf("INTEGER -0x8000000000000000 = %ld", LONG_MIN);
-			} 
-			else {
-				printf("INTEGER -%#lx = %ld", -num->data.integer, num->data.integer);
-			}
+	if (num->type == BIG) {
+		long r = big_to_long(num->data.big);
+		if (r != LONG_MIN) { // try to print in a integer format
+			number_print_long(r);
 			return;
-
-		case BIG:
-			printf("BIG_INT ");
-			big_int_print(num->data.big);
-			printf(" ");
-			return;
+		}
+		printf("BIG ");
+		big_int_print(num->data.big);
+		return;
 	}
+	assert(num->type == INTEGER);
+	number_print_long(num->data.integer);
+	return;
 }
 
 void number_copy(const struct number * const src, struct number * const dst) {
