@@ -35,32 +35,31 @@ static struct big_int * malloc_big_int(int cap) {
 	return big;
 }
 
-static void realloc_big_int(struct big_int ** big, int cap) {
-	assert((*big)->cap < cap);
+static struct big_int * extend_capacity(struct big_int * big, int cap) {
+	if (big->cap >= cap) {
+		return big;
+	}
 
-	struct big_int save = **big;
-	unsigned char b1 = save.bin[0];
+	struct big_int save = *big;
+	int new_cap = ((2 * big->cap) > cap ? (2 * big->cap) : cap); // max(2 * big->cap, cap)
 
-	struct big_int * new = realloc(*big, sizeof(struct big_int) + (sizeof(char) * cap));
-	CHECK_MALLOC(new, "realloc_big_int");
+	struct big_int * new = realloc(big, sizeof(struct big_int) + new_cap);
+	CHECK_MALLOC(new, "extend_capacity");
 
-	new->bin  = (unsigned char *) &new[1]; // 0x10000000000000000 * 2
+	new->bin  = (unsigned char *) &new[1];
 	new->sign = save.sign;
 	new->len  = save.len;
-	new->cap  = cap;
+	new->cap  = new_cap;
 
-	log_debug("big realloc @%p [%d] bin %p --> @%p [%d] bin %p", *big, save.cap, save.bin, new, new->cap, new->bin);
-
-	unsigned char b2 = new->bin[0];
-	assert(b1 == b2); // test the same first digit
-
-	*big = new; 
+	log_debug("big realloc @%p->bin %p[%d] ==> @%p->bin %p[%d]", big, save.bin, save.cap, new, new->bin, new->cap);
+	assert(new->cap >= cap);
+	return new;
 }
 
 // num is a `len` long array of digit (base `base`)
 // return the new size of the number represented in `num`
 static int digit_div_2(int len, unsigned char * num, unsigned int base) {
-
+	assert(base <= BASE);
 	unsigned short rem = 0;
 
 	for (int i = len - 1; i >= 0; i--) {
@@ -97,6 +96,32 @@ static struct big_int * digit_to_big_int(int len, unsigned char * num, unsigned 
 
 	big->len = i;
 	return big;
+}
+
+static void big_swap(struct big_int * b1, struct big_int * b2) {
+	assert(b1->len <= b2->cap);
+	assert(b2->len <= b1->cap);
+
+	int mlen = (b1->len > b2->len ? b1->len : b2->len); // max(b1->len, b2->len)
+	assert(mlen <= b1->cap);
+	assert(mlen <= b2->cap);
+
+	struct big_int b1save = *b1;
+
+	// swap ->bin
+	for (int i = 0; i < mlen; i++) {
+		const unsigned char tmp = b1->bin[i];
+		b1->bin[i] = b2->bin[i];
+		b2->bin[i] = tmp;
+	}
+
+	b1->len  = b2->len;
+	b1->cap  = b2->cap;
+	b1->sign = b2->sign;
+
+	b2->len  = b1save.len;
+	b2->cap  = b1save.cap;
+	b2->sign = b1save.sign;
 }
 
 
@@ -152,18 +177,17 @@ struct big_int * str_to_big(int len, const char * str, unsigned int base) {
 }
 
 
+int big_int_length(const struct big_int * b) {
+	return b->len;
+}
 
 void big_int_neg(struct big_int * b) {
 	log_info("big -%p", b);
+	if ((b->len == 1) && (b->bin[0] == 0)) {
+		assert(b->sign == POSITIVE);
+		return; // no neg on zero;
+	}
 	b->sign = (b->sign == POSITIVE ? NEGATIVE : POSITIVE);
-}
-
-// TODO redo, problem with ->bin
-void big_int_swap(struct big_int * b1, struct big_int * b2) {
-	log_info("big swap @%p <-> @%p", b1, b2);	
-	struct big_int tmp = *b2;
-	*b2 = *b1;
-	*b1 = tmp;
 }
 
 // don't check sign, compare as positive big_ints
@@ -252,24 +276,15 @@ struct big_int * big_int_add(struct big_int * b1, struct big_int * b2) {
 	}
 	if ((b1->sign == NEGATIVE) && (b2->sign == POSITIVE)) {
 		b1->sign = POSITIVE;
-		big_int_swap(b1, b2);
-		return big_int_sub(b1, b2);
+		b1 = big_int_sub(b1, b2);
+		big_int_neg(b1);
+		return b1;
 	}
 	assert(b1->sign == b2->sign);
 
-
-	struct big_int * result = b1;
-	// check capacity
-	int max_size = (b1->len < b2->len ? b2->len : b1->len);
-	// the result of a int sum is a (max_size + 1) long integer
-	if (result->cap <= max_size + 1) {
-		realloc_big_int(&result, max_size * 2);
-	}
-	assert(result->cap > max_size + 1);
-
-	// operation
-	add_big(result, b2);
-	return result;
+	b1 = extend_capacity(b1, (b1->len < b2->len ? b2->len : b1->len) + 1);
+	add_big(b1, b2);
+	return b1;
 }
 
 
@@ -321,12 +336,12 @@ struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2) {
 		b2->sign = POSITIVE;
 		return big_int_add(b1, b2);
 	}
-	assert(b2->sign == POSITIVE);
 	if (b1->sign == NEGATIVE) {
 		b1->sign = POSITIVE;
-		struct big_int * result = big_int_add(b1, b2); 
-		result->sign = NEGATIVE;
-		return result;
+		assert(b2->sign == POSITIVE);
+		b1 = big_int_add(b1, b2); 
+		b1->sign = NEGATIVE;
+		return b1;
 	}
 	assert(b1->sign == POSITIVE);
 	assert(b2->sign == POSITIVE);
@@ -338,15 +353,18 @@ struct big_int * big_int_sub(struct big_int * b1, struct big_int * b2) {
 		b1->sign = POSITIVE;
 		b1->len = 1;
 		b1->bin[0] = 0;
+		return b1;
 	}
-	else if (cmp > 0) { // b1 > b2
+	if (cmp > 0) { // b1 > b2
 		sub_big(b1, b2);
+		return b1;
 	}
-	else { // b2 > b1
-		big_int_swap(b1, b2);
-		sub_big(b1, b2);
-		big_int_neg(b1);
-	}
+
+	// b2 > b1
+	b1 = extend_capacity(b1, b2->cap);
+	big_swap(b1, b2);
+	sub_big(b1, b2);
+	b1->sign = NEGATIVE;
 	return b1;
 }
 
@@ -403,20 +421,34 @@ struct big_int * big_int_mul(struct big_int * b1, struct big_int * b2) {
 	}
 
 	// check capacity
-	if (b1->len > b2->len) {
-		big_int_swap(b1, b2);
-	}
+	if (b1->len > b2->len) { // b1 is longer
+		printf("b1 len %d cap %d, b2 len %d cap %d\n", b1->len, b1->cap, b2->len, b2->cap);
+		if (b2->cap >= b1->len) { // b1 fit in b2
+			big_swap(b1, b2);
+			b1 = extend_capacity(b1, 2 * b2->len);
+		}
+		else {
+			// I don't want to extend b2 just for the swap
+			// I also need to extend b1 after. So I extend once b1 to fit b1 and b2
+			b1 = extend_capacity(b1, b1->len * 3);
+			memcpy(&(b1->bin[2 * b1->len]), b1->bin, b1->len); 	// copy b1 further
+			memcpy(b1->bin, b2->bin, b2->len);					// copy b2 on b1
 
+			b2->bin = &(b1->bin[2 * b1->len]);					// point b2 to b1->bin
+
+			int b1_len = b1->len;								// swap length
+			b1->len = b2->len;
+			b2->len = b1_len;
+		}
+	} else {
+		b1 = extend_capacity(b1, 2 * b2->len);
+	}
 	assert(b1->len <= b2->len);
-	if (b1->cap < 2 * b2->len) {
-		realloc_big_int(&b1, 2 * b2->len);
-	}
 	assert(b1->cap >= 2 * b2->len);
-
-	// check sign
-	b1->sign = (b1->sign == b2->sign ? POSITIVE : NEGATIVE);
-
 	mul_big(b1, b2);
+	
+	// sign
+	b1->sign = (b1->sign == b2->sign ? POSITIVE : NEGATIVE);
 	return b1;
 }
 
@@ -428,11 +460,7 @@ struct big_int * big_int_sqr(struct big_int * b) {
 
 	// check capacity
 	int len = b->len;
-	if (b->cap < len * 2) {
-		realloc_big_int(&b, b->cap * 2);
-	}
-	log_info("big square @%p", b);
-	assert(b->cap >= len * 2);
+	b = extend_capacity(b, 2 * len);
 
 	// shitf the number on the second half of bin
 	memcpy(&(b->bin[len]), b->bin, b->len);
@@ -485,6 +513,10 @@ struct big_int * big_int_pow(struct big_int * b, long expo) {
 		return big_int_sqr(b);
 	}
 
+	// check sign
+	b->sign = (expo % 2 ? NEGATIVE : POSITIVE);
+
+	// expoentiation by squaring
 	struct big_int * prod = malloc_big_int(b->cap * 2);
 	prod->bin[0] = 1;
 
@@ -492,27 +524,24 @@ struct big_int * big_int_pow(struct big_int * b, long expo) {
 		log_debug("big expo, b @%p, prod @%p, expo %ld", b, prod, expo);
 
 		if (expo % 2) { // odd
-			expo -= 1;
 			assert(prod->len <= b->len);
-			if (prod->cap < 2 * b->len) {
-				realloc_big_int(&prod, 2 * b->len);
-			}
+			prod = extend_capacity(prod, 2 * b->len);
 			mul_big(prod, b);
-			expo /= 2;
+			expo -= 1;
 			b = big_int_sqr(b);
+			expo /= 2;
 		} 
 		else { // even
-			expo /= 2;
 			b = big_int_sqr(b);
+			expo /= 2;
 		}
 	}
-
 	assert(expo == 1);
+	
 	assert(prod->len <= b->len);
-	if (prod->cap < 2 * b->len) {
-		realloc_big_int(&prod, 2 * b->len);
-	}
+	prod = extend_capacity(prod, 2 * b->len);
 	mul_big(prod, b);
+	
 	big_int_free(b);
 	log_info("big expo in @%p", prod);
 	return prod;
@@ -692,13 +721,13 @@ void test_big_int() {
 	big_int_free(b81);
 
 
-	printf(" realloc_big_int\n");
+	printf(" extend_capacity\n");
 	struct big_int * b9 = str_to_big(1, "1", 10);
 	assert(b9->sign == POSITIVE);
 	assert(b9->len  == 1);
 	assert(b9->cap  == 1);
 	assert(b9->bin[0] == 1);
-	realloc_big_int(&b9, 6);
+	b9 = extend_capacity(b9, 6);
 	assert(b9->sign == POSITIVE);
 	assert(b9->len  == 1);
 	assert(b9->cap  == 6);
@@ -793,16 +822,6 @@ void test_big_int() {
 	big_int_free(c3);
 	big_int_free(c4);
 	big_int_free(c5);
-
-
-	printf(" big_int_swap\n");
-	struct big_int * swap1 = long_to_big(12);
-	struct big_int * swap2 = long_to_big(34);
-	big_int_swap(swap1, swap2);
-	assert(swap1->bin[0] == 34);
-	assert(swap2->bin[0] == 12);
-	big_int_free(swap1);
-	big_int_free(swap2);
 
 
 	printf(" big_int_sub\n");

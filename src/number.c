@@ -212,7 +212,7 @@ void number_print(const struct number * const num) {
 			number_print_long(r);
 			return;
 		}
-		printf("BIG ");
+		printf("BIG [%d bytes] ", big_int_length(num->data.big));
 		big_int_print(num->data.big);
 		return;
 	}

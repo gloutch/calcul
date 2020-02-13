@@ -5,13 +5,37 @@ This project aimed to be a simple calculator with potentialy huge number.
 ```C++
 Hi!
 Just type 'q' to leave the program
-  
->>> 123456789012345678901234567890 * (40 + 2)
-BIG 0x41723c9e7c1102e718d657c674
 
->>> 2x10101 * 0x2
-INT 0x2a = 42
+>>> 34 * (2 + 3) - 18
+INT 0x98 = 152
+  
+>>> 0x100 * 2x1000
+INT 0x800 = 2048
+  
+>>> 5x132 ^ 2x101010
+BIG [29 bytes] 0x5919417cd6a11dbdf2f413657bbc03bc842ac76ef3932640000000000
 ```
+
+
+
+## Number
+
+By default the numbers are in decimal, but it handles different bases.
+
+You can prefix number with the base using **one** decimal digit followed by **x** and then the **core** number
+
+For instance, the number 14​ in different bases looks like: 
+
+- hexadecimal        `0xe` or `0xE`
+- unary                    `1x00000000000000`
+- binary                   `2x1110`
+- quaternary          `4x32`
+- quinary                `5x24`
+- octal                     `8x16`
+
+The hexadecimal is a special case, but the other bases follow this regular expression: with `b` in [1, 9], `bx [1-(b-1)]+ .? [1-(b-1)]* `
+
+> float numbers aren't implemented yet
 
 
 
@@ -25,12 +49,12 @@ The input line is sent to the `lexer` which performs a **lexical** analysis.
 
 Then, the parser convertes the expression and check the **syntax** as much as possible to return a expressive error.
 
-Next, the expression is sent to `eval` that first performs a **syntaxe transforamation** with `shunting_yard`, from an array of *token* to a `stack`ordered in Reverse Polish Notation ([RPN](https://en.wikipedia.org/wiki/Reverse_Polish_notation)).
+Next, the expression is sent to `eval` that first performs a **syntaxe transforamation** with `shunting_yard`, from an array of *token* to a `stack` ordered in Reverse Polish Notation ([RPN](https://en.wikipedia.org/wiki/Reverse_Polish_notation)).
 
 > The syntaxe transformation uses the [Shunting yard](https://en.wikipedia.org/wiki/Shunting-yard_algorithm) algorithm, with [unary operator](https://stackoverflow.com/questions/16425571/unary-minus-in-shunting-yard-expression-parser). Also, here is my source for [operator precedence](https://en.wikipedia.org/wiki/Order_of_operations#Programming_languages)
 >
 
-Then, durring the evaluation, operands are converted to a `struct number` which **stores the value** as a `long` or a `struct big_int` (the `struct big_int` should manage **operation** on huge size integers). That's the responsability of `struct number` to check overflow on `long` an switch to `struct big_int` when needed.
+Then, durring the evaluation, operands are converted to a `struct number` which **stores the value** as a `long` or a `struct big_int` (the `struct big_int` should manage **operation** on huge size integers). That's the responsability of `struct number` to check overflow on `long` and switch to `struct big_int` when needed.
 
 The result of the evaluation is simply a `struct number`.
 
@@ -64,7 +88,7 @@ Otherwise, I typed expression in the console to see if it works as I wanted. Als
 
 ### Log
 
-The release version doesn't output log, while the debug version has level `LOG_WARN` by default.
+The release version doesn't output log, but, the debug version has level `LOG_WARN` by default.
 
 The log level can be chosen by setting the variable `LOG_LEVEL`
 
@@ -98,28 +122,9 @@ make mrproper
 
 ## Restriction
 
-For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`), [numbers](#number), parenthesis and no function, neither variable.
+For now, I restrict the math expression to a sentence with few operators (`+`, `-`, `*`, `^`), [numbers](#number), parenthesis <u>but</u> no function, neither variable.
 
 That's possible that the code doesn't work on big endian architecture (because of function like `add_big` in `big_int.c` for instance).
-
-
-
-## Number
-
-By default the numbers are in decimal, but it handles different bases.
-
-You can prefix number with the base using **one** decimal digit followed by **x** and then the **core** number
-
-For instance, the number 14​ in different bases looks like: 
-
-- hexadecimal        `0xe` or `0xE`
-- unary                    `1x00000000000000`
-- binary                   `2x1110`
-- quaternary          `4x32`
-- quinary                `5x24`
-- octal                     `8x16`
-
-The hexadecimal is a special case, but the other bases should follow the regular expression, with `b` in [1, 9], `bx [1-(b-1)]+ .? [1-(b-1)]* `
 
 
 
@@ -166,6 +171,5 @@ Here are all the changes I made to add the operator `^` (exponentiation). I thin
    ```
 
    Where `number_pow` is an implementation of the operation on two `struct number`.
-
-
-
+   
+   > Well, implement the operation might be the hardest part...
